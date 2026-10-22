@@ -76,9 +76,19 @@ export const api = {
   // Transactions endpoints
   getTransactions: () => request('/transactions'),
 
+  getTransactionAnalytics: () => request('/transactions/analytics'),
+
   getTransactionById: (id) => request(`/transactions/${id}`),
 
   initiateTransaction: (payload) => request('/transactions/initiate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+
+  // Promotional Coupons
+  getCoupons: () => request('/coupons'),
+
+  validateCoupon: (payload) => request('/coupons/validate', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),

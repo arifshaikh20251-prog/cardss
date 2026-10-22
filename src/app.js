@@ -16,6 +16,7 @@ const transactionRoutes = require('./routes/transactions');
 const devRoutes = require('./routes/dev');
 const kycRoutes = require('./routes/kyc');
 const adminRoutes = require('./routes/admin');
+const couponRoutes = require('./routes/coupons');
 
 // Security & Audit Middleware imports
 const { authLimiter, transactionLimiter, apiGlobalLimiter } = require('./middleware/rateLimiter');
@@ -120,6 +121,7 @@ app.use('/api/kyc', kycRoutes);
 app.use('/api/beneficiaries', beneficiaryRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Sandbox simulation endpoints (active only in non-production)
 if (process.env.NODE_ENV !== 'production') {

@@ -19,6 +19,7 @@ const gatewayFactory = require('../services/gateway/gatewayFactory');
 const payoutFactory = require('../services/payout/payoutFactory');
 const notificationService = require('../services/notificationService');
 const { recordAuditLog } = require('../middleware/auditLogger');
+const couponService = require('../services/couponService');
 
 /**
  * Helper to compute remaining cooling time in seconds and humanized text
@@ -91,6 +92,8 @@ function formatTransactionItem(tx, beneficiary) {
       : null,
     cooling_seconds_remaining: coolingInfo.cooling_seconds_remaining,
     cooling_message: coolingInfo.cooling_message,
+    coupon_code: tx.coupon_code || null,
+    discount_amount: parseFloat(tx.discount_amount || 0),
     invoice_url: `/api/transactions/${tx.id}/invoice`,
   };
 }
@@ -177,8 +180,40 @@ async function initiateTransaction(req, res, next) {
       });
     }
 
-    // 5. Compute Fee Breakdown (2.5% or 3.5% + 18% GST)
-    const feeBreakdown = getFeeBreakdown(numericAmount, normalizedType);
+    // 5. Compute Fee Breakdown & Promotional Coupon Discount (if provided)
+    let feeBreakdown = getFeeBreakdown(numericAmount, normalizedType);
+    let appliedCoupon = null;
+    const rawCoupon = req.body.coupon_code || req.body.couponCode;
+
+    if (rawCoupon && String(rawCoupon).trim()) {
+      const couponValidation = couponService.validateAndApplyCoupon({
+        code: rawCoupon,
+        amount: numericAmount,
+        transferType: normalizedType,
+        purpose: (purpose || 'VENDOR_INVOICE').toUpperCase(),
+      });
+
+      if (!couponValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: couponValidation.error,
+          message: couponValidation.message,
+        });
+      }
+
+      appliedCoupon = couponValidation.coupon;
+      feeBreakdown = {
+        ...feeBreakdown,
+        originalPlatformFee: appliedCoupon.originalFee,
+        platformFee: appliedCoupon.netFee,
+        gstAmount: appliedCoupon.gstAmount,
+        totalFee: appliedCoupon.totalFee,
+        totalPayable: appliedCoupon.totalPayable,
+        discountAmount: appliedCoupon.discountAmount,
+        totalSavings: appliedCoupon.totalSavings,
+        couponCode: appliedCoupon.code,
+      };
+    }
 
     // 6. Create Transaction with status 'INITIATED'
     const transactionRecord = {
@@ -190,6 +225,8 @@ async function initiateTransaction(req, res, next) {
       convenience_fee: feeBreakdown.platformFee,
       gst_on_fee: feeBreakdown.gstAmount,
       total_debited: feeBreakdown.totalPayable,
+      coupon_code: appliedCoupon ? appliedCoupon.code : null,
+      discount_amount: appliedCoupon ? appliedCoupon.discountAmount : 0,
       status: 'INITIATED',
       payout_status: 'INITIATED',
       gateway_order_id: `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
@@ -259,6 +296,7 @@ async function initiateTransaction(req, res, next) {
         total_amount: feeBreakdown.totalPayable,
         transfer_type: normalizedType,
         fee_breakdown: feeBreakdown,
+        applied_coupon: appliedCoupon,
         gateway_provider: gatewayFactory.provider,
       },
       transaction: formatTransactionItem(savedTransaction, beneficiary),
@@ -840,12 +878,126 @@ async function sendEmailInvoice(req, res, next) {
   }
 }
 
+/**
+ * Monthly Spend & Card Usage Analytics
+ * GET /api/transactions/analytics
+ *
+ * Aggregates user transactions for the current calendar month:
+ * - current_month_total_amount: Total INR processed this month
+ * - current_month_swipe_count: Total successful card debits
+ * - active_cooling_count: Transfers currently held in 24h cooling
+ * - settled_count: Transfers settled to beneficiary
+ * - total_fees_saved: Total savings from promotional coupons & speed tier discounts
+ * - category_breakdown: Purpose-based spend distribution
+ */
+async function getTransactionAnalytics(req, res, next) {
+  try {
+    const user = req.user;
+    let transactions = [];
+
+    if (isMockMode || supabase.isMock) {
+      transactions = mockStore.getTransactionsByUserId(user.id);
+    } else {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      transactions = data || [];
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
+
+    // Filter transactions created in the current calendar month
+    const currentMonthTxs = transactions.filter((t) => {
+      const txDate = new Date(t.created_at);
+      return txDate.getFullYear() === currentYear && txDate.getMonth() === currentMonth;
+    });
+
+    // Valid card debits (non-failed, non-cancelled, non-initiated-pending)
+    const isSuccessfulDebit = (t) =>
+      ['SUCCESS', 'IN_COOLING', 'PAYOUT_SUCCESS', 'SETTLED'].includes(t.status) ||
+      (t.payout_status && ['SUCCESS', 'SETTLED', 'IN_COOLING'].includes(t.payout_status));
+
+    const monthSuccessful = currentMonthTxs.filter(isSuccessfulDebit);
+
+    const current_month_total_amount = monthSuccessful.reduce(
+      (sum, t) => sum + (parseFloat(t.amount) || 0),
+      0
+    );
+
+    const current_month_swipe_count = monthSuccessful.length;
+
+    // Active cooling holds for this user across all current transactions
+    const active_cooling_count = transactions.filter((t) => t.status === 'IN_COOLING').length;
+    const settled_count = transactions.filter(
+      (t) => t.status === 'PAYOUT_SUCCESS' || t.status === 'SETTLED'
+    ).length;
+
+    // Total fees saved:
+    // 1. Promotional coupon discounts (+ 18% GST saved)
+    // 2. Standard transfer savings vs Instant tier (1.0% platform fee diff + 18% GST = 1.18%)
+    let couponSavings = 0;
+    let tierSavings = 0;
+
+    monthSuccessful.forEach((t) => {
+      const discount = parseFloat(t.discount_amount || 0);
+      if (discount > 0) {
+        couponSavings += Math.round(discount * 1.18 * 100) / 100;
+      }
+      if (t.transfer_type === 'STANDARD') {
+        const amt = parseFloat(t.amount || 0);
+        tierSavings += Math.round(amt * 0.01 * 1.18 * 100) / 100;
+      }
+    });
+
+    const total_fees_saved = Math.round((couponSavings + tierSavings) * 100) / 100;
+
+    // Category / Purpose Breakdown
+    const category_breakdown = {};
+    monthSuccessful.forEach((t) => {
+      const purpose = t.purpose || 'VENDOR_INVOICE';
+      category_breakdown[purpose] = (category_breakdown[purpose] || 0) + (parseFloat(t.amount) || 0);
+    });
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const month_name = `${monthNames[currentMonth]} ${currentYear}`;
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        current_month_total_amount,
+        current_month_swipe_count,
+        active_cooling_count,
+        settled_count,
+        total_fees_saved,
+        coupon_savings: Math.round(couponSavings * 100) / 100,
+        tier_savings: Math.round(tierSavings * 100) / 100,
+        month_name,
+        category_breakdown,
+        formatted: {
+          current_month_total_amount: `₹${current_month_total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          total_fees_saved: `₹${total_fees_saved.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   initiateTransaction,
   handlePgWebhook,
   mockPgWebhook,
   getTransactions,
   getTransactionById,
+  getTransactionAnalytics,
   downloadInvoicePdf,
   sendEmailInvoice,
 };

@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { formatINR, maskAccount, calculateTotalFromBase } from '../../lib/utils';
 import FeeBreakdown from '../../components/FeeBreakdown';
 import MockPaymentModal from '../../components/MockPaymentModal';
-import PaymentModeDrawer, { DEFAULT_SAVED_CARDS } from '../../components/PaymentModeDrawer';
+import PaymentModeDrawer, { DEFAULT_SAVED_CARDS, getBillDueInfo } from '../../components/PaymentModeDrawer';
 import SwipeToPay from '../../components/SwipeToPay';
 import {
   Zap,
@@ -27,6 +27,8 @@ import {
   UploadCloud,
   ChevronRight,
   User,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -54,6 +56,19 @@ function PayContent() {
   // Invoice Attachment State
   const [invoiceFile, setInvoiceFile] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Promotional Coupon Engine State
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+
+  const PRESET_COUPONS = [
+    { code: 'WELCOME50', label: 'Flat ₹50 OFF', desc: '> ₹5,000' },
+    { code: 'FEE10', label: '10% OFF Fee', desc: 'All orders' },
+    { code: 'RENTMAX', label: 'Flat ₹100 OFF', desc: 'Rent > ₹15,000' },
+  ];
 
   // Fee Breakdown Accordion
   const [showFeeDetails, setShowFeeDetails] = useState(false);
@@ -93,6 +108,70 @@ function PayContent() {
   const numericAmount = parseFloat(amount || 0);
   const isOverCap = numericAmount > 25000;
   const breakdown = calculateTotalFromBase(numericAmount, transferType);
+  const effectiveTotal = appliedCoupon ? appliedCoupon.totalPayable : breakdown.totalPayable;
+
+  const handleApplyCoupon = async (codeToUse) => {
+    const code = (codeToUse || couponCode).trim().toUpperCase();
+    if (!code) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponSuccess('');
+
+    try {
+      const res = await api.validateCoupon({
+        code,
+        amount: numericAmount,
+        transferType,
+        purpose,
+      });
+
+      if (res.valid) {
+        setAppliedCoupon(res);
+        setCouponCode(code);
+        setCouponSuccess(`Coupon '${code}' applied! Saved ${formatINR(res.totalSavings)}.`);
+      } else {
+        setCouponError(res.message || 'Invalid coupon.');
+      }
+    } catch (err) {
+      setCouponError(err.message || 'Failed to apply coupon.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+    setCouponSuccess('');
+  };
+
+  // Re-validate coupon if amount, speed, or purpose changes
+  useEffect(() => {
+    if (appliedCoupon && numericAmount > 0) {
+      api.validateCoupon({
+        code: appliedCoupon.code,
+        amount: numericAmount,
+        transferType,
+        purpose,
+      })
+      .then((res) => {
+        if (res.valid) {
+          setAppliedCoupon(res);
+        } else {
+          setAppliedCoupon(null);
+          setCouponError(`Coupon '${appliedCoupon.code}' removed: ${res.message}`);
+        }
+      })
+      .catch(() => {
+        setAppliedCoupon(null);
+      });
+    }
+  }, [numericAmount, transferType, purpose]);
 
   const handleInitiate = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -120,6 +199,7 @@ function PayContent() {
         amount: numericAmount,
         transfer_type: transferType,
         purpose,
+        coupon_code: appliedCoupon ? appliedCoupon.code : undefined,
         card_id: selectedCard?.id,
         invoice_name: invoiceFile?.name || undefined,
       });
@@ -520,6 +600,33 @@ function PayContent() {
             <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {selectedCard.network} • {selectedCard.cardName}
             </p>
+
+            {/* Selected Card Bill Due Tracker */}
+            {(() => {
+              const billDue = getBillDueInfo(selectedCard.statementDay, selectedCard.dueDay);
+              if (!billDue) return null;
+              return (
+                <div className="mt-1 flex items-center space-x-1.5 flex-wrap">
+                  <span
+                    className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold border ${
+                      billDue.isUrgent
+                        ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                        : billDue.isOptimalFloat
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                    }`}
+                  >
+                    <Clock className="w-2.5 h-2.5 shrink-0" />
+                    <span>{billDue.displayText}</span>
+                  </span>
+                  {billDue.isOptimalFloat && (
+                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                      ⚡ Max Float
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -532,6 +639,122 @@ function PayContent() {
         </button>
       </div>
 
+      {/* Promotional Coupon Code Tile */}
+      <div className="rounded-2xl bg-white dark:bg-fintech-surface border border-slate-200/90 dark:border-slate-800 p-4 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Tag className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
+              Offers & Promotional Coupons
+            </span>
+          </div>
+          {appliedCoupon && (
+            <span className="inline-flex items-center space-x-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+              <span>Applied</span>
+            </span>
+          )}
+        </div>
+
+        {!appliedCoupon ? (
+          <div className="space-y-2.5">
+            {/* Input & Apply Button */}
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="ENTER PROMO CODE"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyCoupon();
+                    }
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 placeholder:text-slate-400"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleApplyCoupon()}
+                disabled={couponLoading || !couponCode.trim()}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-sm transition active:scale-95 shrink-0 flex items-center space-x-1"
+              >
+                {couponLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <span>Apply</span>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Suggestion Chips */}
+            <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 pt-0.5">
+              <span className="text-[10px] font-semibold text-slate-400 flex items-center space-x-0.5 mr-0.5">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                <span>Trending:</span>
+              </span>
+              {PRESET_COUPONS.map((preset) => (
+                <button
+                  key={preset.code}
+                  type="button"
+                  onClick={() => {
+                    setCouponCode(preset.code);
+                    handleApplyCoupon(preset.code);
+                  }}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-500 transition flex items-center space-x-1"
+                >
+                  <span className="font-mono">{preset.code}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-normal">({preset.label})</span>
+                </button>
+              ))}
+            </div>
+
+            {couponError && (
+              <p className="text-[11px] text-red-500 font-semibold flex items-center space-x-1">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <span>{couponError}</span>
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 flex items-center justify-between text-xs animate-in fade-in-50">
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-black text-xs text-emerald-900 dark:text-emerald-200 font-mono tracking-wider">
+                    {appliedCoupon.code}
+                  </span>
+                  <span className="text-[10px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded">
+                    {appliedCoupon.badge || 'APPLIED'}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                  You saved {formatINR(appliedCoupon.totalSavings)} on platform fee & GST
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRemoveCoupon}
+              className="text-[11px] font-bold text-slate-400 hover:text-red-500 px-2 py-1 rounded transition"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Fee Breakdown Accordion Toggle */}
       <div className="rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-3">
         <button
@@ -541,11 +764,18 @@ function PayContent() {
         >
           <div className="flex items-center space-x-1.5">
             <span className="font-bold">Total Payable:</span>
+            {appliedCoupon && (
+              <span className="text-xs line-through text-slate-400">
+                {formatINR(breakdown.totalPayable)}
+              </span>
+            )}
             <span className="font-extrabold text-indigo-600 dark:text-indigo-400 font-mono">
-              {formatINR(breakdown.totalPayable)}
+              {formatINR(effectiveTotal)}
             </span>
             <span className="text-[10px] text-slate-400 font-normal">
-              (incl. ₹{breakdown.totalFee} fee & 18% GST)
+              {appliedCoupon
+                ? `(saved ${formatINR(appliedCoupon.totalSavings)})`
+                : `(incl. ₹${breakdown.totalFee} fee & 18% GST)`}
             </span>
           </div>
           <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold flex items-center space-x-0.5">
@@ -556,7 +786,7 @@ function PayContent() {
 
         {showFeeDetails && (
           <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 animate-in fade-in-50">
-            <FeeBreakdown amount={amount} transferType={transferType} />
+            <FeeBreakdown amount={amount} transferType={transferType} appliedCoupon={appliedCoupon} />
           </div>
         )}
       </div>
@@ -564,7 +794,7 @@ function PayContent() {
       {/* F. Bottom CTA & Trust Badge */}
       <div className="pt-2 space-y-2">
         <SwipeToPay
-          amount={breakdown.totalPayable}
+          amount={effectiveTotal}
           transferType={transferType}
           onComplete={handleInitiate}
           disabled={initiating || isOverCap || !numericAmount || !selectedBeneficiary}

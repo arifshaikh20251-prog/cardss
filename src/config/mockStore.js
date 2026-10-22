@@ -145,6 +145,8 @@ class MockStore {
       convenience_fee: parseFloat(data.convenience_fee || 0),
       gst_on_fee: parseFloat(data.gst_on_fee || 0),
       total_debited: parseFloat(data.total_debited || data.amount),
+      coupon_code: data.coupon_code || null,
+      discount_amount: parseFloat(data.discount_amount || 0),
       status: data.status || 'INITIATED',
       payout_status: data.payout_status || 'INITIATED',
       payment_mode: data.payment_mode || 'CREDIT_CARD',

@@ -16,6 +16,42 @@ import {
 } from 'lucide-react';
 import { formatINR } from '../lib/utils';
 
+export function getBillDueInfo(statementDay, dueDay) {
+  if (!dueDay) return null;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
+
+  let targetDueDate = new Date(currentYear, currentMonth, parseInt(dueDay, 10));
+  if (currentDay > parseInt(dueDay, 10)) {
+    targetDueDate = new Date(currentYear, currentMonth + 1, parseInt(dueDay, 10));
+  }
+
+  const diffMs = targetDueDate.getTime() - now.getTime();
+  const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+  const getOrdinal = (n) => {
+    const num = parseInt(n, 10);
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = num % 100;
+    return num + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  const stmtStr = statementDay ? `Statement: ${getOrdinal(statementDay)} • ` : '';
+  const dueStr = `Bill Due: ${getOrdinal(dueDay)}`;
+
+  return {
+    statementDay: parseInt(statementDay, 10) || null,
+    dueDay: parseInt(dueDay, 10),
+    daysRemaining: diffDays,
+    displayText: `${stmtStr}${dueStr} (Due in ${diffDays} days)`,
+    isUrgent: diffDays <= 3,
+    isOptimalFloat: diffDays >= 15,
+  };
+}
+
 export const DEFAULT_SAVED_CARDS = [
   {
     id: 'card-kotak-1199',
@@ -27,6 +63,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'KMBL',
     monogramBg: 'bg-red-600 text-white',
     isCooling: false,
+    statementDay: 15,
+    dueDay: 5,
     cardType: 'COMMERCIAL_CREDIT',
   },
   {
@@ -39,6 +77,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'HDFC',
     monogramBg: 'bg-blue-600 text-white',
     isCooling: false,
+    statementDay: 20,
+    dueDay: 10,
     cardType: 'BUSINESS_CREDIT',
   },
   {
@@ -51,6 +91,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'ICICI',
     monogramBg: 'bg-orange-600 text-white',
     isCooling: false,
+    statementDay: 5,
+    dueDay: 25,
     cardType: 'CORPORATE_CREDIT',
   },
   {
@@ -63,6 +105,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'SBI',
     monogramBg: 'bg-sky-600 text-white',
     isCooling: false,
+    statementDay: 12,
+    dueDay: 2,
     cardType: 'COMMERCIAL_CREDIT',
   },
   {
@@ -75,6 +119,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'AXIS',
     monogramBg: 'bg-[#800020] text-white',
     isCooling: false,
+    statementDay: 25,
+    dueDay: 15,
     cardType: 'CORPORATE_CREDIT',
   },
   {
@@ -87,6 +133,8 @@ export const DEFAULT_SAVED_CARDS = [
     monogram: 'RBL',
     monogramBg: 'bg-blue-900 text-white',
     isCooling: true, // Demonstrates newly added card with 24h cooling pill
+    statementDay: 1,
+    dueDay: 20,
     cardType: 'COMMERCIAL_CREDIT',
   },
 ];
@@ -108,6 +156,8 @@ export default function PaymentModeDrawer({
   const [newCardExpiry, setNewCardExpiry] = useState('');
   const [newCardCvv, setNewCardCvv] = useState('');
   const [newBankName, setNewBankName] = useState('IndusInd Bank');
+  const [newStatementDay, setNewStatementDay] = useState('');
+  const [newDueDay, setNewDueDay] = useState('');
 
   if (!isOpen) return null;
 
@@ -129,6 +179,8 @@ export default function PaymentModeDrawer({
       monogram: (newBankName.slice(0, 4) || 'BANK').toUpperCase(),
       monogramBg: 'bg-indigo-600 text-white',
       isCooling: true, // newly added card undergoes 24h cooling statutory window
+      statementDay: newStatementDay ? parseInt(newStatementDay, 10) : null,
+      dueDay: newDueDay ? parseInt(newDueDay, 10) : null,
       cardType: 'COMMERCIAL_CREDIT',
     };
 
@@ -140,6 +192,8 @@ export default function PaymentModeDrawer({
     setNewCardExpiry('');
     setNewCardCvv('');
     setNewCardName('');
+    setNewStatementDay('');
+    setNewDueDay('');
   };
 
   return (
@@ -226,6 +280,33 @@ export default function PaymentModeDrawer({
                           </span>
                         )}
                       </div>
+
+                      {/* Statement & Bill Due Tracker */}
+                      {(() => {
+                        const billDue = getBillDueInfo(card.statementDay, card.dueDay);
+                        if (!billDue) return null;
+                        return (
+                          <div className="mt-1 flex items-center space-x-1.5 flex-wrap">
+                            <span
+                              className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold border ${
+                                billDue.isUrgent
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                                  : billDue.isOptimalFloat
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                              }`}
+                            >
+                              <Clock className="w-2.5 h-2.5 shrink-0" />
+                              <span>{billDue.displayText}</span>
+                            </span>
+                            {billDue.isOptimalFloat && (
+                              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                                ⚡ Max Float
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -360,6 +441,40 @@ export default function PaymentModeDrawer({
                   <option value="IndusInd Bank">IndusInd Bank</option>
                   <option value="RBL Bank">RBL Bank</option>
                 </select>
+              </div>
+
+              {/* Optional Bill Due Tracker Inputs */}
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    Statement Date (1-31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="e.g. 5"
+                    value={newStatementDay}
+                    onChange={(e) => setNewStatementDay(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono text-center focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[9.5px] text-slate-400 block mt-0.5 text-center">Day of month</span>
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    Payment Due Date (1-31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="e.g. 25"
+                    value={newDueDay}
+                    onChange={(e) => setNewDueDay(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono text-center focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[9.5px] text-slate-400 block mt-0.5 text-center">Day of month</span>
+                </div>
               </div>
 
               <button

@@ -19,6 +19,10 @@ import {
   Plus,
   Loader2,
   RefreshCw,
+  TrendingUp,
+  Sparkles,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -26,6 +30,7 @@ export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,13 +48,17 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setRefreshing(true);
-      const [txRes, benRes] = await Promise.all([
+      const [txRes, benRes, analyticsRes] = await Promise.all([
         api.getTransactions().catch(() => ({ transactions: [] })),
         api.getBeneficiaries().catch(() => ({ beneficiaries: [] })),
+        api.getTransactionAnalytics().catch(() => null),
       ]);
 
       setTransactions(txRes.transactions || []);
       setBeneficiaries(benRes.beneficiaries || []);
+      if (analyticsRes && analyticsRes.analytics) {
+        setAnalytics(analyticsRes.analytics);
+      }
     } catch (e) {
       console.error('Failed to load dashboard', e);
     } finally {
@@ -124,33 +133,120 @@ export default function DashboardPage() {
       {/* Active Cooling Alert Banner */}
       <CoolingBanner transactions={transactions} />
 
-      {/* Credit & Volume Summary Card */}
-      <div className="rounded-3xl bg-gradient-to-tr from-white via-indigo-50/50 to-white dark:from-slate-900 dark:via-indigo-950/40 dark:to-slate-900 border border-slate-200/90 dark:border-indigo-500/30 p-5 shadow-sm dark:shadow-glow relative overflow-hidden transition-all">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+      {/* Revolut-Style Monthly Financial Overview Card */}
+      {(() => {
+        const activeAnalytics = analytics || {
+          current_month_total_amount: transactions.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0),
+          current_month_swipe_count: transactions.length,
+          active_cooling_count: transactions.filter((t) => t.status === 'IN_COOLING').length,
+          settled_count: transactions.filter((t) => t.status === 'PAYOUT_SUCCESS' || t.status === 'SETTLED').length,
+          total_fees_saved: 0,
+          month_name: 'Current Month',
+        };
 
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
-          <span>Total Utility & Vendor Payouts</span>
-          <span className="flex items-center space-x-1 text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20 text-[10px]">
-            <ShieldCheck className="w-3 h-3" />
-            <span>Cap: ₹25k/tx</span>
-          </span>
-        </div>
+        const totalSwipes = activeAnalytics.current_month_swipe_count || 0;
+        const settledCount = activeAnalytics.settled_count || 0;
+        const coolingCount = activeAnalytics.active_cooling_count || 0;
+        const settledPct = totalSwipes > 0 ? Math.round((settledCount / Math.max(1, settledCount + coolingCount)) * 100) : 100;
 
-        <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight font-sans">
-          {formatINR(totalVolume)}
-        </div>
+        return (
+          <div className="rounded-3xl bg-gradient-to-tr from-white via-indigo-50/40 to-white dark:from-slate-900 dark:via-indigo-950/40 dark:to-slate-900 border border-slate-200/90 dark:border-indigo-500/30 p-5 shadow-sm dark:shadow-glow relative overflow-hidden transition-all space-y-4">
+            <div className="absolute top-0 right-0 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="mt-4 pt-3.5 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-semibold block">Verified Vault</span>
-            <span className="font-bold text-slate-900 dark:text-slate-200 mt-0.5 block">{beneficiaries.length} Payees</span>
+            {/* Header: Title + Month & Savings Badges */}
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div>
+                <div className="flex items-center space-x-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Monthly Financial Overview</span>
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  {activeAnalytics.month_name}
+                </span>
+              </div>
+
+              {activeAnalytics.total_fees_saved > 0 ? (
+                <div className="inline-flex items-center space-x-1 text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Saved {formatINR(activeAnalytics.total_fees_saved)}</span>
+                </div>
+              ) : (
+                <span className="text-[10px] text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                  Cap: ₹25k/tx
+                </span>
+              )}
+            </div>
+
+            {/* Hero Spend Metric */}
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block">
+                Total Spent This Month
+              </span>
+              <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-sans mt-0.5">
+                {formatINR(activeAnalytics.current_month_total_amount)}
+              </div>
+            </div>
+
+            {/* Metrics Breakdown Grid */}
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block uppercase">
+                  Card Swipes
+                </span>
+                <span className="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5 block">
+                  {totalSwipes}
+                </span>
+              </div>
+
+              <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-2.5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 block uppercase">
+                  Fees Saved
+                </span>
+                <span className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5 block">
+                  {formatINR(activeAnalytics.total_fees_saved)}
+                </span>
+              </div>
+
+              <div className="bg-indigo-50/60 dark:bg-indigo-950/30 p-2.5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
+                <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-400 block uppercase">
+                  Active Payees
+                </span>
+                <span className="text-sm font-extrabold text-indigo-700 dark:text-indigo-300 mt-0.5 block">
+                  {beneficiaries.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Visual Settlement vs Cooling Breakdown Pills */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-[11px] font-semibold">
+                <span className="flex items-center space-x-1.5 text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Settled: {settledCount} Transfers</span>
+                </span>
+                <span className="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>In-Cooling: {coolingCount} Holds</span>
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex">
+                <div
+                  style={{ width: `${settledPct}%` }}
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  title={`Settled ${settledPct}%`}
+                />
+                <div
+                  style={{ width: `${100 - settledPct}%` }}
+                  className="h-full bg-amber-500 transition-all duration-300"
+                  title={`In Cooling ${100 - settledPct}%`}
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-semibold block">Settlement Rails</span>
-            <span className="font-bold text-indigo-600 dark:text-indigo-400 mt-0.5 block">IMPS Instant (3.5%)</span>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Quick Action Cards */}
       <div>

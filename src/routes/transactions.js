@@ -14,6 +14,7 @@ router.post('/mock-pg-webhook', transactionController.mockPgWebhook);
 
 // 2. Protected User Endpoints
 router.get('/', authMiddleware, transactionController.getTransactions);
+router.get('/analytics', authMiddleware, transactionController.getTransactionAnalytics);
 router.post('/initiate', authMiddleware, transactionController.initiateTransaction);
 router.get('/:id', authMiddleware, transactionController.getTransactionById);
 router.get('/:id/invoice', authMiddleware, transactionController.downloadInvoicePdf);
