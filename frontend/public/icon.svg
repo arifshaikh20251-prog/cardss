@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="fintechGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#0B0F17"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="url(#fintechGrad)" stroke-width="8" opacity="0.3"/>
+  <path d="M280 64L140 280h100l-20 168 152-224H270l20-160z" fill="url(#fintechGrad)" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+</svg>

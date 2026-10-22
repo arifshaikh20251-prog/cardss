@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service & Anti-Money Laundering (AML) Policy | UtilityPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-[#0B0F17] border-b border-slate-800 py-4 px-6 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+        </div>
+        <span class="font-bold text-lg text-white">UtilityPay</span>
+      </a>
+      <a href="index.html" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Back to Home</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Content Container -->
+  <main class="max-w-4xl mx-auto px-4 py-12 flex-1 space-y-8">
+    <div class="border-b border-slate-800 pb-6">
+      <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">Legal Document</span>
+      <h1 class="text-3xl font-extrabold text-white">Terms of Service & Anti-Money Laundering (AML) Policy</h1>
+      <p class="text-xs text-slate-400 mt-2">Effective Date: October 22, 2026 | Last Updated: October 2026</p>
+    </div>
+
+    <!-- Preamble & Scope -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>1. Platform Purpose & Legitimate Business Scope</span>
+      </h2>
+      <p>
+        UtilityPay, operated by <strong>UtilityPay Technologies India Pvt. Ltd.</strong> ("Company", "we", "our"), provides a specialized business-to-business (B2B) digital intermediary platform that facilitates the processing and automated settlement of commercial utility bills, verified vendor invoices (MCC 7399), commercial office leases (MCC 6513), and equipment rental payments.
+      </p>
+      <p>
+        The platform facilitates the pass-through disbursement of principal transaction funds directly into the verified bank account of the designated vendor, landlord, or utility service provider via authorized banking channels (IMPS / NEFT). UtilityPay acts strictly as a technology intermediary and convenience fee aggregator (SAC 9971).
+      </p>
+    </section>
+
+    <!-- Strict Prohibitions & AML -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed bg-red-950/20 border border-red-500/30 rounded-2xl p-6">
+      <h2 class="text-base font-bold text-red-400 flex items-center space-x-2">
+        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        <span>2. Strict Anti-Money Laundering (AML) & Prohibited Activities</span>
+      </h2>
+      <p>
+        In accordance with the Prevention of Money Laundering Act, 2002 (PMLA) and Reserve Bank of India (RBI) Digital Payment Regulations, the following transactions and behaviors are strictly and unconditionally prohibited on UtilityPay:
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong>Prohibition of Self-Transfers & Credit Card Cycling:</strong> Users are strictly prohibited from transferring funds to their own bank account, or to any entity/beneficiary sharing the identical Permanent Account Number (PAN), registered mobile contact, or having >80% phonetic/name similarity with the cardholder.</li>
+        <li><strong>Prohibition of Personal Cash Advances:</strong> The platform cannot be used to convert credit card credit limits into personal cash, uncollateralized loans, or peer-to-peer transfers.</li>
+        <li><strong>Fictitious Invoicing:</strong> Users must possess valid, verifiable underlying commercial rent agreements, commercial invoices, or utility documentation. Generating fictitious or mock invoices for financial speculation is an offense.</li>
+      </ul>
+      <p class="text-[11px] text-red-300">
+        Violation of these prohibitions will result in immediate suspension of account privileges, forfeiture of convenience fees, reporting to banking partners, and filing of Suspicious Transaction Reports (STR) with the Financial Intelligence Unit - India (FIU-IND).
+      </p>
+    </section>
+
+    <!-- Penny Drop & Security Cooling -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>3. Beneficiary Verification & Statutory Cooling-Off Windows</span>
+      </h2>
+      <p>
+        To prevent unauthorized misdirection of funds:
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong>Penny-Drop Validation:</strong> Every beneficiary bank account registered in the Vault is verified via an automated ₹1 bank account inquiry to corroborate name matching and bank IFSC routing.</li>
+        <li><strong>24-Hour Card Cooling Window:</strong> The first debit transaction initiated on any newly registered payer account or unverified card is subject to a statutory 24-hour security cooling hold (<code>IN_COOLING</code>) before automated IMPS disbursement is triggered.</li>
+        <li><strong>Per-Ticket Cap:</strong> A strict cap of ₹25,000.00 applies per transaction to safeguard corporate cardholders against velocity abuse.</li>
+      </ul>
+    </section>
+
+    <!-- Pricing & Convenience Fees -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>4. Platform Fees & Statutory GST (SAC 9971)</span>
+      </h2>
+      <p>
+        UtilityPay charges a convenience fee for technology infrastructure and banking rail routing:
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong>Instant IMPS Settlement:</strong> 3.5% Platform Convenience Fee.</li>
+        <li><strong>Standard Next-Day Batch:</strong> 2.5% Platform Convenience Fee.</li>
+        <li><strong>GST Taxation:</strong> Goods & Services Tax (GST) at the statutory rate of 18% is levied strictly on the platform convenience fee, as certified on the computer-generated GST Tax Invoice. No GST is levied on the pass-through principal utility or rental amount.</li>
+      </ul>
+    </section>
+
+    <!-- Governing Law -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>5. Governing Law & Jurisdiction</span>
+      </h2>
+      <p>
+        These Terms shall be governed and construed in accordance with the laws of India. Any legal disputes arising out of the services shall be subject to the exclusive jurisdiction of the competent courts in Bengaluru, Karnataka, India.
+      </p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+    <p>&copy; 2026 UtilityPay Technologies India Pvt. Ltd. All rights reserved.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

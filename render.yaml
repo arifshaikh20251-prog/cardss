@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: utilitypay-backend
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MOCK_MODE
+        value: "false"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CASHFREE_APP_ID
+        sync: false
+      - key: CASHFREE_SECRET_KEY
+        sync: false
+      - key: CASHFREE_ENV
+        value: sandbox
+      - key: SUREPASS_TOKEN
+        sync: false
+      - key: SUREPASS_ENV
+        value: sandbox
+      - key: FRONTEND_URL
+        sync: false

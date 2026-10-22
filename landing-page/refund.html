@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refund & Cancellation Policy | UtilityPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-[#0B0F17] border-b border-slate-800 py-4 px-6 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+        </div>
+        <span class="font-bold text-lg text-white">UtilityPay</span>
+      </a>
+      <a href="index.html" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Back to Home</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Content Container -->
+  <main class="max-w-4xl mx-auto px-4 py-12 flex-1 space-y-8">
+    <div class="border-b border-slate-800 pb-6">
+      <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block mb-1">Financial Operations</span>
+      <h1 class="text-3xl font-extrabold text-white">Refund, Reversal & Dispute Settlement Policy</h1>
+      <p class="text-xs text-slate-400 mt-2">Effective Date: October 22, 2026 | Last Updated: October 2026</p>
+    </div>
+
+    <!-- Payout Mechanics & Irrevocability -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>1. Real-Time Banking Settlement & Non-Cancellable Payouts</span>
+      </h2>
+      <p>
+        UtilityPay executes disbursements through Reserve Bank of India authorized electronic clearing rails (Immediate Payment Service - IMPS / National Electronic Funds Transfer - NEFT). 
+      </p>
+      <p>
+        Once a transaction is processed by the banking network and a <strong>Bank Unique Transaction Reference (UTR)</strong> is issued, the transfer is complete, final, and legally irrevocable. Consequently, users cannot cancel or reverse a successfully settled payment.
+      </p>
+    </section>
+
+    <!-- Failed Transactions & Automatic Reversal -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <h2 class="text-base font-bold text-emerald-400 flex items-center space-x-2">
+        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        <span>2. Failed Transactions & Automated Refund Turnaround</span>
+      </h2>
+      <p>
+        In situations where a user's payment card is debited, but the downstream beneficiary bank rejects the credit (e.g. beneficiary account closed, invalid IFSC routing, or bank network downtime):
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong>Automatic Initiation:</strong> The UtilityPay settlement engine will immediately flag the transaction as <code>FAILED</code> or <code>REVERSED</code> and trigger an automated refund of both the principal amount and convenience fee.</li>
+        <li><strong>Turnaround Time (TAT):</strong> Refunds are credited back to the original source card / issuing bank within <strong>3 to 5 banking business days</strong>, strictly conforming to RBI turnaround mandates.</li>
+        <li><strong>Refund Tracking:</strong> An automated confirmation notification containing the Payment Gateway Refund Reference ID is issued to the user's registered mobile number and visible under the Transaction History tab.</li>
+      </ul>
+    </section>
+
+    <!-- Cooling Period Cancellations -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>3. Cancellation of Transactions in Security Cooling</span>
+      </h2>
+      <p>
+        For new payer accounts or initial card authorizations held under the statutory 24-hour cooling window (<code>IN_COOLING</code>):
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li>If an unauthorized transaction or legitimate billing discrepancy is identified by the cardholder prior to the expiration of the 24-hour release timer, the payer may request a transaction freeze by contacting our 24/7 Operations Desk at <a href="mailto:support@utilitypay.in" class="text-indigo-400 underline">support@utilitypay.in</a>.</li>
+        <li>Upon fraud verification, the pending IMPS disbursement will be aborted and the entire authorized sum reversed back to the source instrument within 3 to 5 business days.</li>
+      </ul>
+    </section>
+
+    <!-- Chargebacks & Dispute Escalation -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>4. Chargeback Policy & Commercial Dispute Resolution</span>
+      </h2>
+      <p>
+        Since UtilityPay facilitates payments on behalf of corporate users for verified commercial services:
+      </p>
+      <p>
+        Disputes regarding the quality of goods or services provided by a vendor or landlord must be addressed directly with the respective recipient. In the event of a banking chargeback claim filed by the cardholder, UtilityPay will submit the bank UTR settlement receipt, penny-drop validation certificate, and SAC 9971 GST invoice to the cardholder's issuing bank as definitive proof of disbursement.
+      </p>
+    </section>
+
+    <!-- Grievance Officer -->
+    <section class="space-y-4 text-xs text-slate-300 leading-relaxed">
+      <h2 class="text-base font-bold text-white flex items-center space-x-2">
+        <span>5. Nodal Grievance Redressal</span>
+      </h2>
+      <p>
+        If your refund inquiry is not addressed within 5 business days, please escalate directly to our Nodal Grievance Officer:
+      </p>
+      <div class="rounded-xl bg-slate-900 border border-slate-800 p-4 text-xs text-slate-400 space-y-1">
+        <p><strong class="text-slate-200">Grievance Officer:</strong> Ms. Sneha R. Iyengar</p>
+        <p><strong class="text-slate-200">Email:</strong> grievances@utilitypay.in</p>
+        <p><strong class="text-slate-200">Escalation Response Time:</strong> Within 24-48 working hours</p>
+        <p><strong class="text-slate-200">Address:</strong> Level 6, Cyber Crest Towers, Outer Ring Road, Bellandur, Bengaluru - 560103, India</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+    <p>&copy; 2026 UtilityPay Technologies India Pvt. Ltd. All rights reserved.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+frontend
+landing-page
+tests
+.git
+.gitignore
+.env
+.env.local
+.vscode
+.idea
+*.backup.gz
+F4xK4CtDJWjlaVLg.txt
+Dockerfile
+render.yaml

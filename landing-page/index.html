@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UtilityPay | B2B Vendor Invoicing & Commercial Utility Settlements</title>
+  <meta name="description" content="Intelligent Vendor Invoicing & Commercial Utility Settlements for Growing Enterprises. Automate supplier payouts, office rental disbursements, and commercial utility invoices.">
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            fintech: {
+              dark: '#0B0F17',
+              card: '#111827',
+              surface: '#1E293B',
+              border: '#334155',
+              primary: '#6366F1',
+              accent: '#10B981',
+              warning: '#F59E0B',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .hero-glow {
+      background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.05) 40%, transparent 70%);
+    }
+  </style>
+</head>
+<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- Top Navigation Bar                                                        -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-50 bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <a href="index.html" class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold text-white tracking-tight">Utility<span class="text-indigo-400">Pay</span></span>
+          <span class="text-[10px] block font-semibold text-slate-400 uppercase tracking-widest -mt-1">B2B Settlement Engine</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+        <a href="#features" class="hover:text-white transition">Platform Features</a>
+        <a href="#solutions" class="hover:text-white transition">B2B Solutions</a>
+        <a href="#pricing" class="hover:text-white transition">Dual Fee Rates</a>
+        <a href="#compliance" class="hover:text-white transition">RBI & GST Compliance</a>
+        <a href="contact.html" class="hover:text-white transition">Contact</a>
+      </nav>
+
+      <!-- App Launch Action -->
+      <div class="flex items-center space-x-3">
+        <a href="http://localhost:3000/login" class="hidden sm:inline-flex text-xs font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl border border-slate-700 hover:border-slate-600 transition">
+          Merchant Portal
+        </a>
+        <a href="http://localhost:3000/login" class="inline-flex items-center space-x-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition active:scale-95">
+          <span>Launch Web App</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- Hero Section                                                              -->
+  <!-- ========================================================================= -->
+  <section class="relative pt-20 pb-24 overflow-hidden hero-glow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      
+      <!-- Trust Pill -->
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700/80 text-slate-300 text-xs font-medium mb-8">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-400">Statutory SAC 9971 Compliant</span>
+        <span class="text-slate-600">•</span>
+        <span class="text-indigo-400 font-semibold">100% Principal Payout Guarantee</span>
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
+        Intelligent Vendor Invoicing & Commercial Utility Settlements for Growing Enterprises
+      </h1>
+
+      <!-- Subheadline -->
+      <p class="mt-6 text-base sm:text-xl text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
+        Automate supplier payouts, office rental disbursements, and commercial utility invoices with automated SAC 9971 GST compliance and real-time bank IMPS rails.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#solutions" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:opacity-95 shadow-xl shadow-indigo-500/25 transition flex items-center justify-center space-x-2">
+          <span>Explore B2B Solutions</span>
+          <i data-lucide="arrow-down" class="w-4 h-4"></i>
+        </a>
+        <a href="http://localhost:3000/login" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm text-slate-200 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 transition flex items-center justify-center space-x-2">
+          <span>Merchant Login</span>
+          <i data-lucide="external-link" class="w-4 h-4 text-slate-400"></i>
+        </a>
+      </div>
+
+      <!-- Trust Badges Strip -->
+      <div class="mt-16 pt-8 border-t border-slate-800/80 max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-slate-400 text-xs">
+        <div class="flex items-center justify-center space-x-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+          <span>Penny-Drop Verified</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <i data-lucide="file-check-2" class="w-4 h-4 text-indigo-400"></i>
+          <span>SAC 9971 GST Invoices</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+          <span>Dual Speed IMPS Rails</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <i data-lucide="lock" class="w-4 h-4 text-sky-400"></i>
+          <span>Anti-Self-Transfer AML</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- Feature Highlights Section                                                -->
+  <!-- ========================================================================= -->
+  <section id="features" class="py-20 bg-slate-900/50 border-y border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-2">Core Technology</span>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Fintech Guardrails Engineered for Enterprise Trust</h2>
+        <p class="text-sm text-slate-400 mt-2">Every transaction adheres to RBI anti-cycling terms, statutory GST deductions, and live bank verification.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Feature 1 -->
+        <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 hover:border-indigo-500/40 transition">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-5">
+            <i data-lucide="check-circle" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2">Penny-Drop Account Validation</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Automated ₹1 bank account ping verifies recipient identity and IFSC accuracy before payouts are permitted.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 hover:border-emerald-500/40 transition">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-5">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2">100% Statutory GST Invoices</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Generates compliant PDF Tax Invoices certifying platform convenience fees under SAC 9971 with 18% GST breakdown.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 hover:border-amber-500/40 transition">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-5">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2">Dual Settlement Rails</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Choose between Instant IMPS Payout (3.5%) or Standard Next-Day Batch Settlement (2.5%) based on cash flow needs.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 hover:border-sky-500/40 transition">
+          <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-5">
+            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2">Anti-Self-Transfer Safeguards</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Levenshtein fuzzy name comparison and PAN matching prevent credit card cycling and unauthorized personal cash extraction.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- B2B Solutions Section                                                     -->
+  <!-- ========================================================================= -->
+  <section id="solutions" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-2">Supported Categories</span>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Purpose-Built for Corporate & Commercial Utilities</h2>
+        <p class="text-sm text-slate-400 mt-2">All disbursements are strictly tagged with appropriate Merchant Category Codes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Solution 1 -->
+        <div class="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-6">
+              <i data-lucide="building-2" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">MCC 6513</span>
+            <h3 class="text-xl font-bold text-white mb-3">Commercial Office Rent</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Disburse monthly commercial leases, co-working facility dues, and corporate office rent directly to designated landlords with rent agreement archiving.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+            <span>Pass-through to Landlord</span>
+            <span class="font-bold text-emerald-400">100% Payout</span>
+          </div>
+        </div>
+
+        <!-- Solution 2 -->
+        <div class="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6">
+              <i data-lucide="receipt" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-1">MCC 7399</span>
+            <h3 class="text-xl font-bold text-white mb-3">B2B Vendor Invoices</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Settle supplier bills, IT infrastructure maintenance, and professional service invoices with automatic tax breakdown and PAN verification.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+            <span>Invoice Number Tagging</span>
+            <span class="font-bold text-indigo-400">Audit Ready</span>
+          </div>
+        </div>
+
+        <!-- Solution 3 -->
+        <div class="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-6">
+              <i data-lucide="server" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1">MCC 4900</span>
+            <h3 class="text-xl font-bold text-white mb-3">Equipment & Utility Leases</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Automate warehouse leasing, server hardware rental fees, and commercial utilities with complete transaction trail and automated receipts.
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+            <span>Direct Payout Rail</span>
+            <span class="font-bold text-amber-400">Real-Time IMPS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- Pricing Section                                                           -->
+  <!-- ========================================================================= -->
+  <section id="pricing" class="py-20 bg-slate-900/50 border-y border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-2">Transparent Economics</span>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Clear, Simple, and Predictable Processing Fees</h2>
+        <p class="text-sm text-slate-400 mt-2">Zero hidden setup charges. GST is charged strictly on the platform convenience fee as per law.</p>
+      </div>
+
+      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Plan 1 -->
+        <div class="p-8 rounded-3xl bg-[#111827] border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Standard Transfer</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300">T+1 Batch</span>
+            </div>
+            <div class="flex items-baseline space-x-1 mb-2">
+              <span class="text-4xl font-black text-white">2.5%</span>
+              <span class="text-xs text-slate-400">+ 18% GST on Fee</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-6">Economical processing for scheduled commercial rental and recurring supplier disbursements.</p>
+
+            <ul class="space-y-3 text-xs text-slate-300">
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>Next business day settlement</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>₹1 Penny-Drop beneficiary verification</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>Automated SAC 9971 GST Tax Invoice PDF</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>Strict ₹25,000 single ticket safety cap</span>
+              </li>
+            </ul>
+          </div>
+          <a href="http://localhost:3000/pay?type=STANDARD" class="mt-8 w-full py-3.5 rounded-xl font-bold text-xs text-center text-slate-200 bg-slate-800 hover:bg-slate-700 transition">
+            Choose Standard Pay
+          </a>
+        </div>
+
+        <!-- Plan 2 (Highlighted) -->
+        <div class="p-8 rounded-3xl bg-gradient-to-tr from-slate-900 via-indigo-950/60 to-slate-900 border border-indigo-500 shadow-xl shadow-indigo-500/10 flex flex-col justify-between relative">
+          <div class="absolute -top-3 right-6 bg-indigo-500 text-white font-bold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+            Most Popular
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Instant Priority Pay</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/20 text-indigo-300">Real-Time IMPS</span>
+            </div>
+            <div class="flex items-baseline space-x-1 mb-2">
+              <span class="text-4xl font-black text-white">3.5%</span>
+              <span class="text-xs text-slate-400">+ 18% GST on Fee</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-6">Real-time instant settlement directly into recipient bank account for verified cards.</p>
+
+            <ul class="space-y-3 text-xs text-slate-300">
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>Instant IMPS payout with Bank UTR</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>₹1 Penny-Drop beneficiary verification</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>Automated SAC 9971 GST Tax Invoice PDF</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                <span>24-Hour security cooling on new cards</span>
+              </li>
+            </ul>
+          </div>
+          <a href="http://localhost:3000/pay?type=INSTANT" class="mt-8 w-full py-3.5 rounded-xl font-bold text-xs text-center text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition">
+            Choose Instant Pay
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- Compliance & Regulatory Banner                                            -->
+  <!-- ========================================================================= -->
+  <section id="compliance" class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8 sm:p-12 relative overflow-hidden">
+        <div class="max-w-3xl">
+          <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest block mb-2">Regulatory Compliance</span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Strict Anti-Money Laundering & RBI Digital Payment Alignment</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-4 leading-relaxed">
+            UtilityPay operates strictly as a commercial utility and vendor invoice processing intermediary. In compliance with the Prevention of Money Laundering Act (PMLA) and RBI guidelines, direct personal cash-outs and self-transfers to one’s own account or matching PAN are strictly prohibited.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-4 text-xs font-semibold text-slate-300">
+            <span class="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+              <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
+              <span>256-Bit SSL Data Security</span>
+            </span>
+            <span class="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+              <i data-lucide="check" class="w-4 h-4 text-indigo-400"></i>
+              <span>SAC 9971 Statutory Tax Invoice</span>
+            </span>
+            <span class="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+              <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+              <span>24-Hour First Card Cooling Window</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- Footer                                                                    -->
+  <!-- ========================================================================= -->
+  <footer class="mt-auto bg-slate-950 border-t border-slate-800/80 pt-16 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div class="space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+            </div>
+            <span class="font-bold text-lg text-white">UtilityPay</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Commercial Utility & Vendor Invoicing Intermediary Platform for Enterprises.
+          </p>
+          <p class="text-[11px] text-slate-500 font-mono">
+            CIN: U72900KA2026PTC182901<br>
+            Entity: UtilityPay Technologies India Pvt. Ltd.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">Solutions</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><a href="#solutions" class="hover:text-white transition">Office Rent (MCC 6513)</a></li>
+            <li><a href="#solutions" class="hover:text-white transition">Vendor Invoicing (MCC 7399)</a></li>
+            <li><a href="#solutions" class="hover:text-white transition">Equipment Leases</a></li>
+            <li><a href="#pricing" class="hover:text-white transition">Dual Settlement Rates</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">Mandatory Policies</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><a href="terms.html" class="hover:text-white transition">Terms of Service & AML</a></li>
+            <li><a href="privacy.html" class="hover:text-white transition">Privacy & Data Security</a></li>
+            <li><a href="refund.html" class="hover:text-white transition">Refund & Cancellation Policy</a></li>
+            <li><a href="contact.html" class="hover:text-white transition">Grievance & Contact Details</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">Corporate Office</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            UtilityPay Technologies India Pvt. Ltd.<br>
+            Level 6, Cyber Crest Towers, Outer Ring Road,<br>
+            Bellandur, Bengaluru, Karnataka - 560103, India<br>
+            CIN: U72900KA2026PTC182901
+          </p>
+          <p class="text-xs text-slate-400 mt-2">
+            Support: <a href="mailto:support@utilitypay.in" class="text-indigo-400 underline">support@utilitypay.in</a>
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-8 border-t border-slate-900 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500">
+        <p>&copy; 2026 UtilityPay Technologies India Pvt. Ltd. All rights reserved.</p>
+        <p class="mt-2 sm:mt-0">Designed for Payment Gateway Compliance & Hostinger public_html Deployment.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

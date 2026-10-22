@@ -1,0 +1,18 @@
+{
+  "name": "UtilityPay - B2B Vendor Invoicing",
+  "short_name": "UtilityPay",
+  "description": "Enterprise B2B fintech vendor invoicing and commercial rental payouts engine",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

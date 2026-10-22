@@ -1,0 +1,43 @@
+{
+  "name": "b2b-vendor-invoicing-backend",
+  "version": "1.0.0",
+  "description": "B2B Vendor Invoicing & Rental Management Platform Backend Engine",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node --test",
+    "verify:supabase": "node scripts/verifySupabase.js",
+    "seed:supabase": "node scripts/seedSupabaseLive.js",
+    "dev:all": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run dev\" \"npm run dev --prefix frontend\"",
+    "test:all": "npm test && npm run build --prefix frontend",
+    "smoke:test": "node scripts/productionSmokeTest.js",
+    "deploy:frontend": "cd frontend && npx vercel",
+    "deploy:frontend:prod": "cd frontend && npx vercel --prod"
+  },
+  "keywords": [
+    "fintech",
+    "b2b",
+    "invoicing",
+    "rental-management",
+    "supabase",
+    "express"
+  ],
+  "author": "Fintech Platform Engineering Team",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "nodemailer": "^10.2.0",
+    "pdfkit": "^0.20.2"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "nodemon": "^3.1.9"
+  }
+}

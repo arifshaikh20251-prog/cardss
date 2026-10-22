@@ -1,0 +1,35 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        fintech: {
+          dark: '#0B0F17',
+          card: '#111827',
+          surface: '#1E293B',
+          border: '#334155',
+          primary: '#6366F1',
+          primaryHover: '#4F46E5',
+          accent: '#10B981',
+          warning: '#F59E0B',
+          danger: '#EF4444',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      boxShadow: {
+        glow: '0 0 25px -5px rgba(99, 102, 241, 0.25)',
+        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.25)',
+        'glow-amber': '0 0 25px -5px rgba(245, 158, 11, 0.25)',
+      },
+    },
+  },
+  plugins: [],
+};
