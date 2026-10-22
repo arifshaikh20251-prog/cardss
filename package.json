@@ -13,6 +13,7 @@
     "test:all": "npm test && npm run build --prefix frontend",
     "smoke:test": "node scripts/productionSmokeTest.js",
     "package:hostinger": "node scripts/buildHostingerZip.js",
+    "configure:gateway": "node scripts/configureGatewayCredentials.js",
     "deploy:frontend": "cd frontend && npx vercel",
     "deploy:frontend:prod": "cd frontend && npx vercel --prod"
   },
