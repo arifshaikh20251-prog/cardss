@@ -138,5 +138,41 @@ export const api = {
   resetSandbox: () => request('/dev/reset-sandbox', {
     method: 'POST',
   }),
+
+  // Master Admin Endpoints
+  getAdminMetrics: (adminKey = 'fintech_admin_secret_key_2026') => request('/admin/metrics', {
+    headers: { 'x-admin-key': adminKey },
+  }),
+
+  getAdminTransactions: (params = {}, adminKey = 'fintech_admin_secret_key_2026') => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/admin/transactions${query ? `?${query}` : ''}`, {
+      headers: { 'x-admin-key': adminKey },
+    });
+  },
+
+  overrideCooling: (transactionId, adminKey = 'fintech_admin_secret_key_2026') => request(`/admin/transactions/${transactionId}/override-cooling`, {
+    method: 'POST',
+    headers: { 'x-admin-key': adminKey },
+  }),
+
+  downloadGstReport: async (month = '', adminKey = 'fintech_admin_secret_key_2026') => {
+    const query = month ? `?month=${month}&format=csv` : '?format=csv';
+    const blob = await request(`/admin/export-gst-report${query}`, {
+      method: 'GET',
+      responseType: 'blob',
+      headers: { 'x-admin-key': adminKey },
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `UtilityPay_CA_GSTR1_${month || 'All_Time'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };
+
 

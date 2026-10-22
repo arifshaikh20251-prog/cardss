@@ -15,6 +15,7 @@ const beneficiaryRoutes = require('./routes/beneficiary');
 const transactionRoutes = require('./routes/transactions');
 const devRoutes = require('./routes/dev');
 const kycRoutes = require('./routes/kyc');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -103,6 +104,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/beneficiaries', beneficiaryRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Sandbox simulation endpoints (active only in non-production)
 if (process.env.NODE_ENV !== 'production') {

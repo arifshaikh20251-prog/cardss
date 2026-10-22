@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/authContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Wrench, 
   FastForward, 
@@ -189,6 +190,16 @@ export default function DevSandboxDrawer() {
                 )}
                 <span>🔄 Reset Demo Data</span>
               </button>
+
+              {/* Master Admin Center Link */}
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="w-full py-2 px-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-500/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center justify-center space-x-1.5 transition active:scale-95"
+              >
+                <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>🛡️ Master Admin Center (/admin)</span>
+              </Link>
             </div>
 
             {/* Quick Switch Account */}
