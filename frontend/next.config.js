@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const DEFAULT_BACKEND_URL = 'https://api.eshopcity.in';
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -11,7 +13,7 @@ const nextConfig = {
     const rawBackendUrl =
       process.env.BACKEND_API_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000');
+      (process.env.NODE_ENV === 'production' ? DEFAULT_BACKEND_URL : 'http://localhost:5000');
 
     if (!rawBackendUrl) return [];
 
