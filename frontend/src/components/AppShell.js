@@ -7,8 +7,8 @@ import DevSandboxDrawer from './DevSandboxDrawer';
 
 export default function AppShell({ children }) {
   return (
-    <div className="min-h-screen bg-black text-slate-100 flex justify-center">
-      <div className="w-full max-w-md min-h-screen bg-fintech-dark border-x border-slate-800/50 flex flex-col relative pb-20 shadow-2xl">
+    <div className="min-h-screen bg-slate-100 dark:bg-[#04070D] text-slate-900 dark:text-slate-100 flex justify-center selection:bg-indigo-500 selection:text-white">
+      <div className="w-full max-w-md min-h-screen bg-slate-50 dark:bg-fintech-dark border-x border-slate-200 dark:border-slate-800/50 flex flex-col relative pb-20 shadow-2xl transition-colors duration-200">
         <TopHeader />
         <main className="flex-1 px-4 py-4">{children}</main>
         <DevSandboxDrawer />

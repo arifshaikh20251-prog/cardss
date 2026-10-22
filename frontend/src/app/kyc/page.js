@@ -14,7 +14,6 @@ import {
   Loader2,
   FileText,
   KeyRound,
-  Building,
   UserCheck,
   Sparkles,
   ArrowRight,
@@ -106,10 +105,13 @@ export default function KycVerificationPage() {
 
     try {
       const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
-      const res = await api.initiateAadhaar({ aadhaarNumber: cleanAadhaar });
-      setClientRefId(res.clientRefId);
-      setMaskedAadhaar(res.maskedAadhaar);
+      const res = await api.initiateAadhaarOtp({
+        aadhaarNumber: cleanAadhaar,
+      });
+
       setOtpDispatched(true);
+      setClientRefId(res.client_ref_id);
+      setMaskedAadhaar(res.masked_aadhaar);
     } catch (err) {
       setAadhaarError(err.message || 'Failed to dispatch Aadhaar OTP.');
     } finally {
@@ -123,7 +125,7 @@ export default function KycVerificationPage() {
     setVerifyOtpLoading(true);
 
     try {
-      const res = await api.verifyAadhaar({
+      const res = await api.verifyAadhaarOtp({
         clientRefId,
         otp: otp.trim(),
       });
@@ -133,58 +135,60 @@ export default function KycVerificationPage() {
       updateUser({
         kyc_status: 'VERIFIED',
         is_cooling_cleared: true,
-        pan_number: panNumber.toUpperCase(),
       });
       setStep(3);
     } catch (err) {
-      setAadhaarError(err.message || 'Invalid Aadhaar OTP. Try mock code 123456.');
+      setAadhaarError(err.message || 'Invalid Aadhaar OTP. Try 123456 in mock mode.');
     } finally {
       setVerifyOtpLoading(false);
     }
   };
 
+  const isVerified = kycStatus === 'VERIFIED' || user?.kyc_status === 'VERIFIED';
+
   if (authLoading || loadingStatus) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-        <span className="text-xs text-slate-400">Verifying KYC credentials...</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">Validating KYC status...</span>
       </div>
     );
   }
 
-  const isVerified = kycStatus === 'VERIFIED';
-
   return (
-    <div className="space-y-5 animate-fade-in pb-10 max-w-md mx-auto">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between pt-1">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-slate-800"
+    <div className="space-y-4 animate-fade-in pb-8">
+      {/* Top Nav Back */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard"
+          className="flex items-center space-x-1 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Dashboard</span>
-        </button>
-
+          <span>Back to Dashboard</span>
+        </Link>
         <div
-          className={`flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+          className={`flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
             isVerified
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-              : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+              : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30'
           }`}
         >
-          {isVerified ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-          <span>{isVerified ? 'KYC Verified' : 'Standard Tier'}</span>
+          {isVerified ? (
+            <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+          )}
+          <span>{isVerified ? 'VERIFIED' : 'PENDING'}</span>
         </div>
       </div>
 
       {/* Hero Title */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-black text-white tracking-tight flex items-center space-x-2">
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
           <span>KYC Verification Engine</span>
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+          <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         </h1>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
           Verify corporate PAN & Aadhaar via RBI-approved e-KYC to clear cooling-off windows and unlock instant bank settlements.
         </p>
       </div>
@@ -194,77 +198,77 @@ export default function KycVerificationPage() {
         <div
           className={`p-3 rounded-2xl border transition-all ${
             step >= 2 || panResult
-              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
               : step === 1
-              ? 'bg-indigo-600/15 border-indigo-500/50 text-indigo-200 shadow-glow'
-              : 'bg-slate-900 border-slate-800 text-slate-500'
+              ? 'bg-indigo-50 dark:bg-indigo-600/15 border-indigo-300 dark:border-indigo-500/50 text-indigo-800 dark:text-indigo-200 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
           }`}
         >
           <div className="flex items-center justify-between mb-1">
             <span className="font-extrabold text-[10px] uppercase tracking-wider">Step 1</span>
             {step >= 2 || panResult ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <FileText className="w-4 h-4 text-indigo-400" />
+              <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             )}
           </div>
-          <p className="font-bold text-xs text-white">PAN Card Check</p>
-          <p className="text-[10px] text-slate-400 mt-0.5">ITD Syntax & Match</p>
+          <p className="font-bold text-xs text-slate-900 dark:text-white">PAN Card Check</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">ITD Syntax & Match</p>
         </div>
 
         <div
           className={`p-3 rounded-2xl border transition-all ${
             step === 3 || isVerified
-              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300'
               : step === 2
-              ? 'bg-indigo-600/15 border-indigo-500/50 text-indigo-200 shadow-glow'
-              : 'bg-slate-900 border-slate-800 text-slate-500'
+              ? 'bg-indigo-50 dark:bg-indigo-600/15 border-indigo-300 dark:border-indigo-500/50 text-indigo-800 dark:text-indigo-200 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
           }`}
         >
           <div className="flex items-center justify-between mb-1">
             <span className="font-extrabold text-[10px] uppercase tracking-wider">Step 2</span>
             {step === 3 || isVerified ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <KeyRound className="w-4 h-4 text-indigo-400" />
+              <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             )}
           </div>
-          <p className="font-bold text-xs text-white">Aadhaar OTP</p>
-          <p className="text-[10px] text-slate-400 mt-0.5">UIDAI e-KYC Verification</p>
+          <p className="font-bold text-xs text-slate-900 dark:text-white">Aadhaar OTP</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">UIDAI e-KYC Verification</p>
         </div>
       </div>
 
       {/* Success Badge Banner (if already verified or completed) */}
       {(step === 3 || isVerified) && (
-        <div className="rounded-3xl bg-gradient-to-tr from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 p-5 space-y-4 shadow-glow">
+        <div className="rounded-3xl bg-gradient-to-tr from-emerald-50 via-white to-emerald-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-900 border border-emerald-300 dark:border-emerald-500/40 p-5 space-y-4 shadow-sm dark:shadow-glow">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">Account KYC Verified</h3>
-              <p className="text-xs text-emerald-400/90 font-medium mt-0.5">
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Account KYC Verified</h3>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400/90 font-medium mt-0.5">
                 Statutory limits cleared • Instant IMPS active
               </p>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-slate-800">
-              <span className="text-slate-400">Verified PAN:</span>
-              <span className="font-mono text-white font-bold">{panNumber || 'ABCDE1234F'}</span>
+          <div className="rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 space-y-2 text-xs">
+            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400">Verified PAN:</span>
+              <span className="font-mono text-slate-900 dark:text-white font-bold">{panNumber || 'ABCDE1234F'}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800">
-              <span className="text-slate-400">Aadhaar Holder:</span>
-              <span className="text-white font-semibold">{aadhaarResult?.name || user?.full_name || 'Verified Partner'}</span>
+            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400">Aadhaar Holder:</span>
+              <span className="text-slate-900 dark:text-white font-semibold">{aadhaarResult?.name || user?.full_name || 'Verified Partner'}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800">
-              <span className="text-slate-400">Masked UIDAI:</span>
-              <span className="font-mono text-slate-300">{aadhaarResult?.maskedAadhaar || 'XXXXXXXX5544'}</span>
+            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400">Masked UIDAI:</span>
+              <span className="font-mono text-slate-700 dark:text-slate-300">{aadhaarResult?.maskedAadhaar || 'XXXXXXXX5544'}</span>
             </div>
             <div className="flex justify-between py-1">
-              <span className="text-slate-400">Cooling Window:</span>
-              <span className="text-emerald-400 font-bold">BYPASSED (Instant Releases)</span>
+              <span className="text-slate-500 dark:text-slate-400">Cooling Window:</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">BYPASSED (Instant Releases)</span>
             </div>
           </div>
 
@@ -277,33 +281,33 @@ export default function KycVerificationPage() {
             </Link>
             <Link
               href="/dashboard"
-              className="flex-1 py-3 rounded-2xl bg-slate-800 border border-slate-700 font-bold text-xs text-slate-200 text-center active:scale-95 transition"
+              className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-700 dark:text-slate-200 text-center active:scale-95 transition"
             >
-              Back to Dashboard
+              Dashboard
             </Link>
           </div>
         </div>
       )}
 
-      {/* STEP 1: PAN Verification Card */}
-      {step === 1 && (
-        <div className="rounded-3xl bg-fintech-surface/90 border border-slate-800 p-5 space-y-4 shadow-xl">
+      {/* STEP 1: PAN Form */}
+      {step === 1 && !isVerified && (
+        <div className="rounded-3xl bg-white dark:bg-fintech-surface/90 border border-slate-200/90 dark:border-slate-800 p-5 space-y-4 shadow-sm dark:shadow-xl">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <div className="flex items-center space-x-1.5 text-indigo-400 text-xs font-semibold">
-                <Building className="w-3.5 h-3.5" />
-                <span>Entity Verification</span>
+              <div className="flex items-center space-x-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-semibold">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Step 1 of 2</span>
               </div>
-              <h3 className="font-extrabold text-white text-base">Verify PAN Card</h3>
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Corporate PAN Verification</h3>
             </div>
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">
+            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono">
               NSDL / ITD
             </span>
           </div>
 
           <form onSubmit={handleVerifyPan} className="space-y-3.5">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                 Full Registered Name
               </label>
               <input
@@ -312,12 +316,12 @@ export default function KycVerificationPage() {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Apex Solutions Private Limited"
                 required
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                 Permanent Account Number (PAN)
               </label>
               <input
@@ -327,7 +331,7 @@ export default function KycVerificationPage() {
                 onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
                 placeholder="ABCDE1234F"
                 required
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-white font-mono uppercase tracking-widest focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white font-mono uppercase tracking-widest focus:outline-none focus:border-indigo-500 transition"
               />
               <p className="text-[10px] text-slate-500 mt-1">
                 Must match standard format: 5 letters, 4 digits, 1 letter.
@@ -335,7 +339,7 @@ export default function KycVerificationPage() {
             </div>
 
             {panError && (
-              <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-400 text-xs flex items-center space-x-2">
+              <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-600 dark:text-rose-400 text-xs flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{panError}</span>
               </div>
@@ -361,42 +365,42 @@ export default function KycVerificationPage() {
           </form>
 
           {/* Sandbox tip */}
-          <div className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800 text-[11px] text-slate-400">
-            <span className="font-bold text-indigo-400">Sandbox Test PAN:</span> Any valid format like{' '}
-            <code className="text-slate-200">ABCDE1234F</code> passes instant verification.
+          <div className="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-2.5 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">Sandbox Test PAN:</span> Any valid format like{' '}
+            <code className="text-slate-900 dark:text-slate-200 font-bold">ABCDE1234F</code> passes instant verification.
           </div>
         </div>
       )}
 
       {/* STEP 2: Aadhaar OTP Card */}
       {step === 2 && !isVerified && (
-        <div className="rounded-3xl bg-fintech-surface/90 border border-slate-800 p-5 space-y-4 shadow-xl">
+        <div className="rounded-3xl bg-white dark:bg-fintech-surface/90 border border-slate-200/90 dark:border-slate-800 p-5 space-y-4 shadow-sm dark:shadow-xl">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <div className="flex items-center space-x-1.5 text-emerald-400 text-xs font-semibold">
+              <div className="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>UIDAI e-KYC</span>
               </div>
-              <h3 className="font-extrabold text-white text-base">Aadhaar OTP Verification</h3>
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Aadhaar OTP Verification</h3>
             </div>
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">
+            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono">
               6-Digit OTP
             </span>
           </div>
 
           {/* PAN Verified confirmation tag */}
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-3 py-2 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>PAN Verified: {panNumber}</span>
             </div>
-            <span className="text-[10px] text-slate-400">Active</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">Active</span>
           </div>
 
           {!otpDispatched ? (
             <form onSubmit={handleInitiateAadhaar} className="space-y-3.5">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                   Aadhaar Number (12 Digits)
                 </label>
                 <input
@@ -405,13 +409,12 @@ export default function KycVerificationPage() {
                   value={aadhaarNumber}
                   onChange={(e) => {
                     const cleaned = e.target.value.replace(/\D/g, '').slice(0, 12);
-                    // Add space formatting 4-4-4
                     const parts = cleaned.match(/.{1,4}/g) || [];
                     setAadhaarNumber(parts.join(' '));
                   }}
                   placeholder="XXXX XXXX 9012"
                   required
-                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-white font-mono tracking-widest focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white font-mono tracking-widest focus:outline-none focus:border-indigo-500 transition"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
                   OTP will be sent to the mobile linked with your Aadhaar.
@@ -419,7 +422,7 @@ export default function KycVerificationPage() {
               </div>
 
               {aadhaarError && (
-                <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-400 text-xs flex items-center space-x-2">
+                <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-600 dark:text-rose-400 text-xs flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{aadhaarError}</span>
                 </div>
@@ -445,17 +448,17 @@ export default function KycVerificationPage() {
             </form>
           ) : (
             <form onSubmit={handleVerifyAadhaarOtp} className="space-y-3.5">
-              <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3 text-xs space-y-1">
-                <span className="text-slate-400 block">OTP sent to Aadhaar linked mobile:</span>
-                <span className="font-mono text-emerald-400 font-bold text-sm">{maskedAadhaar}</span>
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 text-xs space-y-1">
+                <span className="text-slate-500 dark:text-slate-400 block">OTP sent to Aadhaar linked mobile:</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold text-sm">{maskedAadhaar}</span>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Enter 6-Digit OTP
                   </label>
-                  <span className="text-[10px] text-emerald-400 font-mono">Sandbox: 123456</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Sandbox: 123456</span>
                 </div>
                 <input
                   type="text"
@@ -465,12 +468,12 @@ export default function KycVerificationPage() {
                   placeholder="123456"
                   required
                   autoFocus
-                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-center text-lg font-mono text-white tracking-[0.5em] focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-center text-lg font-mono text-slate-900 dark:text-white tracking-[0.5em] focus:outline-none focus:border-emerald-500 transition"
                 />
               </div>
 
               {aadhaarError && (
-                <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-400 text-xs flex items-center space-x-2">
+                <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-2.5 text-rose-600 dark:text-rose-400 text-xs flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{aadhaarError}</span>
                 </div>
@@ -497,7 +500,7 @@ export default function KycVerificationPage() {
               <button
                 type="button"
                 onClick={() => setOtpDispatched(false)}
-                className="w-full text-center text-[11px] text-slate-400 hover:text-white pt-1"
+                className="w-full text-center text-[11px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white pt-1"
               >
                 Change Aadhaar Number
               </button>
@@ -505,9 +508,9 @@ export default function KycVerificationPage() {
           )}
 
           {/* Sandbox tip */}
-          <div className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800 text-[11px] text-slate-400">
-            <span className="font-bold text-emerald-400">Mock Mode Hint:</span> Enter any 12-digit number (e.g.{' '}
-            <code className="text-slate-200">987654321012</code>) and OTP <code className="text-emerald-300 font-bold">123456</code>.
+          <div className="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-2.5 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">Mock Mode Hint:</span> Enter any 12-digit number (e.g.{' '}
+            <code className="text-slate-900 dark:text-slate-200 font-bold">987654321012</code>) and OTP <code className="text-emerald-700 dark:text-emerald-300 font-bold">123456</code>.
           </div>
         </div>
       )}

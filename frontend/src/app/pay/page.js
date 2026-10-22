@@ -10,14 +10,11 @@ import MockPaymentModal from '../../components/MockPaymentModal';
 import VirtualCardPreview from '../../components/VirtualCardPreview';
 import SwipeToPay from '../../components/SwipeToPay';
 import {
-  CreditCard,
   Zap,
   Clock,
-  ShieldCheck,
   AlertCircle,
   Building,
   Receipt,
-  Users,
   ArrowRight,
   Loader2,
   CheckCircle2,
@@ -71,7 +68,6 @@ function PayContent() {
     }
   };
 
-  const selectedBeneficiary = beneficiaries.find((b) => b.id === selectedBeneficiaryId);
   const numericAmount = parseFloat(amount || 0);
   const isOverCap = numericAmount > 25000;
 
@@ -103,63 +99,62 @@ function PayContent() {
         purpose,
       });
 
-      setCheckoutData(res.checkout);
+      setCheckoutData(res);
       setIsModalOpen(true);
     } catch (err) {
-      setError(err.message || 'Failed to initiate transaction.');
+      setError(err.message || 'Payment initiation failed.');
     } finally {
       setInitiating(false);
     }
   };
 
-  const handlePaymentSuccess = (webhookResult) => {
+  const handlePaymentSuccess = (result) => {
     setIsModalOpen(false);
-    setSuccessResult(webhookResult);
+    setSuccessResult(result);
   };
 
-  if (authLoading || (loading && !beneficiaries.length)) {
+  if (authLoading || (loading && beneficiaries.length === 0)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-2">
-        <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-        <span className="text-xs text-slate-400">Loading payment checkout...</span>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+        <span className="text-xs text-slate-500 dark:text-slate-400">Loading payout session...</span>
       </div>
     );
   }
 
-  // If payment succeeded, show success confirmation screen
   if (successResult) {
     const tx = successResult.transaction;
 
     return (
       <div className="py-6 space-y-5 animate-fade-in text-center">
-        <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-glow-emerald">
+        <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-glow-emerald">
           <CheckCircle2 className="w-8 h-8" />
         </div>
 
         <div>
-          <h2 className="text-xl font-black text-white">Payment Authorized</h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-[280px] mx-auto">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Payment Authorized</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[280px] mx-auto">
             {successResult.message || 'Credit card debited successfully.'}
           </p>
         </div>
 
-        <div className="rounded-2xl bg-fintech-surface border border-slate-800 p-4 text-left space-y-2.5 text-xs">
+        <div className="rounded-2xl bg-white dark:bg-fintech-surface border border-slate-200/90 dark:border-slate-800 p-4 text-left space-y-2.5 text-xs shadow-sm">
           <div className="flex justify-between">
-            <span className="text-slate-400">Amount Debited</span>
-            <span className="font-extrabold text-white">{formatINR(tx?.total_debited)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Amount Debited</span>
+            <span className="font-extrabold text-slate-900 dark:text-white">{formatINR(tx?.total_debited)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Beneficiary Payout</span>
-            <span className="font-bold text-emerald-400">{formatINR(tx?.amount)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Beneficiary Payout</span>
+            <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatINR(tx?.amount)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Settlement Status</span>
-            <span className="font-semibold text-indigo-400">{tx?.status}</span>
+            <span className="text-slate-500 dark:text-slate-400">Settlement Status</span>
+            <span className="font-semibold text-indigo-600 dark:text-indigo-400">{tx?.status}</span>
           </div>
           {tx?.utr_number && (
             <div className="flex justify-between font-mono">
-              <span className="text-slate-400">Bank UTR</span>
-              <span className="text-emerald-400 font-bold">{tx?.utr_number}</span>
+              <span className="text-slate-500 dark:text-slate-400">Bank UTR</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold">{tx?.utr_number}</span>
             </div>
           )}
         </div>
@@ -177,7 +172,7 @@ function PayContent() {
               setSuccessResult(null);
               setCheckoutData(null);
             }}
-            className="text-xs text-slate-400 hover:text-white transition"
+            className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition"
           >
             Make another payment
           </button>
@@ -190,14 +185,14 @@ function PayContent() {
     <div className="space-y-4 animate-fade-in pb-4">
       {/* Title */}
       <div>
-        <h2 className="text-xl font-extrabold text-white tracking-tight">Checkout & Pay</h2>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Checkout & Pay</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Dual Fee Rates (INSTANT 3.5%, STANDARD 2.5%) + 18% GST
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs">
           {error}
         </div>
       )}
@@ -213,23 +208,23 @@ function PayContent() {
         {/* Beneficiary Selector */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Select Recipient Beneficiary
             </label>
             <Link
               href="/beneficiaries"
-              className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold"
+              className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold"
             >
               + New Payee
             </Link>
           </div>
 
           {beneficiaries.length === 0 ? (
-            <div className="p-3.5 rounded-xl border border-dashed border-slate-800 text-center">
-              <p className="text-xs text-slate-400 mb-2">No payees available in vault</p>
+            <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 text-center bg-white/50 dark:bg-transparent">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">No payees available in vault</p>
               <Link
                 href="/beneficiaries"
-                className="text-xs font-bold text-indigo-400 underline"
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 underline"
               >
                 Add verified payee first &rarr;
               </Link>
@@ -238,7 +233,7 @@ function PayContent() {
             <select
               value={selectedBeneficiaryId}
               onChange={(e) => setSelectedBeneficiaryId(e.target.value)}
-              className="w-full bg-fintech-surface border border-slate-700 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-white dark:bg-fintech-surface border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 shadow-sm"
             >
               {beneficiaries.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -251,7 +246,7 @@ function PayContent() {
 
         {/* Transfer Purpose Toggle */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
             Transfer Purpose (Category)
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -260,8 +255,8 @@ function PayContent() {
               onClick={() => setPurpose('VENDOR_INVOICE')}
               className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
                 purpose === 'VENDOR_INVOICE'
-                  ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-50 dark:bg-indigo-600/20 border-indigo-300 dark:border-indigo-500 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Receipt className="w-4 h-4" />
@@ -272,8 +267,8 @@ function PayContent() {
               onClick={() => setPurpose('OFFICE_RENT')}
               className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center space-x-1.5 transition ${
                 purpose === 'OFFICE_RENT'
-                  ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-50 dark:bg-indigo-600/20 border-indigo-300 dark:border-indigo-500 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Building className="w-4 h-4" />
@@ -285,19 +280,19 @@ function PayContent() {
         {/* Amount Input */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Principal Amount
             </label>
             <span
               className={`text-[11px] font-mono ${
-                isOverCap ? 'text-red-400 font-bold' : 'text-slate-400'
+                isOverCap ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               Max Cap: ₹25,000
             </span>
           </div>
-          <div className="relative rounded-2xl bg-slate-900 border border-slate-700 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">
+          <div className="relative rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 shadow-sm transition">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400 dark:text-slate-500">
               ₹
             </span>
             <input
@@ -308,11 +303,11 @@ function PayContent() {
               placeholder="20000"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-transparent pl-9 pr-4 py-3.5 text-lg font-bold text-white placeholder-slate-600 focus:outline-none font-mono"
+              className="w-full bg-transparent pl-9 pr-4 py-3.5 text-lg font-bold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none font-mono"
             />
           </div>
           {isOverCap && (
-            <p className="text-[11px] text-red-400 mt-1 flex items-center space-x-1">
+            <p className="text-[11px] text-red-500 dark:text-red-400 mt-1 flex items-center space-x-1">
               <AlertCircle className="w-3 h-3 shrink-0" />
               <span>Exceeds single ticket cap of ₹25,000. Please reduce amount.</span>
             </p>
@@ -321,7 +316,7 @@ function PayContent() {
 
         {/* Transfer Speed Radio Toggle */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
             Transfer Speed & Settlement Rail
           </label>
           <div className="grid grid-cols-2 gap-2.5">
@@ -330,20 +325,20 @@ function PayContent() {
               onClick={() => setTransferType('INSTANT')}
               className={`cursor-pointer rounded-2xl p-3.5 border transition ${
                 transferType === 'INSTANT'
-                  ? 'bg-gradient-to-tr from-indigo-950/60 to-slate-900 border-indigo-500 shadow-glow'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-gradient-to-tr dark:from-indigo-950/60 dark:to-slate-900 border-indigo-400 dark:border-indigo-500 shadow-sm dark:shadow-glow'
+                  : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-white flex items-center space-x-1">
-                  <Zap className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1">
+                  <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                   <span>Instant Pay</span>
                 </span>
-                <span className="text-[10px] font-extrabold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                <span className="text-[10px] font-extrabold text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-500/20">
                   3.5%
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 leading-snug">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
                 Real-time IMPS payout rail. Immediate settlement for cleared cards.
               </p>
             </div>
@@ -353,20 +348,20 @@ function PayContent() {
               onClick={() => setTransferType('STANDARD')}
               className={`cursor-pointer rounded-2xl p-3.5 border transition ${
                 transferType === 'STANDARD'
-                  ? 'bg-gradient-to-tr from-indigo-950/60 to-slate-900 border-indigo-500 shadow-glow'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-gradient-to-tr dark:from-indigo-950/60 dark:to-slate-900 border-indigo-400 dark:border-indigo-500 shadow-sm dark:shadow-glow'
+                  : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-white flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span>Standard Pay</span>
                 </span>
-                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/20">
                   2.5%
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 leading-snug">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
                 Lowest processing fee. Next business day batch settlement (T+1).
               </p>
             </div>
@@ -405,7 +400,7 @@ export default function PayPage() {
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-2">
           <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-          <span className="text-xs text-slate-400">Loading checkout session...</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Loading checkout session...</span>
         </div>
       }
     >

@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/authContext';
 import { api } from '../../lib/api';
 import TransactionCard from '../../components/TransactionCard';
 import CoolingBanner from '../../components/CoolingBanner';
-import { History, Filter, RefreshCw, Loader2, ArrowUpRight } from 'lucide-react';
+import { History, RefreshCw, Loader2, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TransactionsHistoryPage() {
@@ -54,18 +54,18 @@ export default function TransactionsHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight">Transaction History</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Transaction History</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Real-time IMPS settlements & GST Tax Invoices
           </p>
         </div>
         <button
           onClick={fetchTransactions}
           disabled={refreshing}
-          className="p-2 rounded-xl bg-fintech-surface border border-slate-800 text-slate-400 hover:text-white transition active:scale-95"
+          className="p-2 rounded-xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition active:scale-95"
           title="Refresh history"
         >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
         </button>
       </div>
 
@@ -73,13 +73,13 @@ export default function TransactionsHistoryPage() {
       <CoolingBanner transactions={transactions} />
 
       {/* Filter Tabs */}
-      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-fintech-surface border border-slate-800 text-xs font-semibold">
+      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-xs font-semibold">
         <button
           onClick={() => setFilterTab('ALL')}
           className={`py-2 rounded-xl transition ${
             filterTab === 'ALL'
-              ? 'bg-indigo-600 text-white shadow-glow'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           All ({transactions.length})
@@ -89,8 +89,8 @@ export default function TransactionsHistoryPage() {
           onClick={() => setFilterTab('IN_COOLING')}
           className={`py-2 rounded-xl transition ${
             filterTab === 'IN_COOLING'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           In Cooling ({coolingCount})
@@ -100,8 +100,8 @@ export default function TransactionsHistoryPage() {
           onClick={() => setFilterTab('COMPLETED')}
           className={`py-2 rounded-xl transition ${
             filterTab === 'COMPLETED'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Settled ({completedCount})
@@ -112,14 +112,14 @@ export default function TransactionsHistoryPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-2">
           <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-          <span className="text-xs text-slate-400">Loading ledger records...</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Loading ledger records...</span>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-800 p-8 text-center space-y-3">
-          <History className="w-10 h-10 text-slate-600 mx-auto" />
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-8 text-center space-y-3 bg-white/50 dark:bg-transparent">
+          <History className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
           <div>
-            <h4 className="text-sm font-bold text-white">No Transactions Found</h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-[240px] mx-auto">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">No Transactions Found</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] mx-auto">
               {filterTab === 'ALL'
                 ? 'Your transfer activity will appear here once initiated.'
                 : `No transactions matching status '${filterTab}'.`}
@@ -127,7 +127,7 @@ export default function TransactionsHistoryPage() {
           </div>
           <Link
             href="/pay"
-            className="inline-flex items-center space-x-1 text-xs font-bold text-indigo-400 underline underline-offset-2"
+            className="inline-flex items-center space-x-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 underline underline-offset-2"
           >
             <span>Initiate payment</span>
             <ArrowUpRight className="w-3.5 h-3.5" />

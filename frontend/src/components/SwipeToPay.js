@@ -77,10 +77,10 @@ export default function SwipeToPay({
         ref={trackRef}
         className={`relative h-14 rounded-2xl overflow-hidden flex items-center transition-all ${
           disabled
-            ? 'bg-slate-900 border border-slate-800 opacity-50 cursor-not-allowed'
+            ? 'bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 opacity-50 cursor-not-allowed'
             : isCompleted
-            ? 'bg-emerald-950/80 border border-emerald-500/50 shadow-glow-emerald'
-            : 'bg-slate-900/90 border border-slate-700/80 shadow-lg shadow-black/40'
+            ? 'bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 dark:border-emerald-500/50 shadow-glow-emerald'
+            : 'bg-slate-200/90 dark:bg-slate-900/90 border border-slate-300/80 dark:border-slate-700/80 shadow-inner dark:shadow-lg dark:shadow-black/40'
         }`}
       >
         {/* Dynamic Gradient Fill Track */}
@@ -91,7 +91,7 @@ export default function SwipeToPay({
 
         {/* Shimmer Track Glow */}
         {!disabled && !isCompleted && !loading && (
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-white/5 to-transparent animate-pulse pointer-events-none" />
         )}
 
         {/* Center Label (Fades out during drag) */}
@@ -100,20 +100,20 @@ export default function SwipeToPay({
           style={{ opacity: Math.max(0, 1 - dragProgress * 2) }}
         >
           {loading ? (
-            <div className="flex items-center space-x-2 text-xs font-bold text-indigo-300">
+            <div className="flex items-center space-x-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Authorizing Transfer...</span>
             </div>
           ) : isCompleted ? (
-            <div className="flex items-center space-x-1.5 text-xs font-extrabold text-emerald-300">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center space-x-1.5 text-xs font-extrabold text-emerald-800 dark:text-emerald-300">
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Payment Initiated!</span>
             </div>
           ) : (
-            <div className="flex items-center space-x-1.5 text-xs font-extrabold text-white tracking-wide">
+            <div className="flex items-center space-x-1.5 text-xs font-extrabold text-slate-800 dark:text-white tracking-wide">
               <span>Slide to Transfer</span>
-              <span className="text-emerald-400 font-black">{formatINR(numericAmount)}</span>
-              <ChevronsRight className="w-4 h-4 text-slate-400 animate-pulse ml-0.5" />
+              <span className="text-emerald-600 dark:text-emerald-400 font-black">{formatINR(numericAmount)}</span>
+              <ChevronsRight className="w-4 h-4 text-slate-500 dark:text-slate-400 animate-pulse ml-0.5" />
             </div>
           )}
         </div>
@@ -128,8 +128,8 @@ export default function SwipeToPay({
             isDragging ? 'scale-105' : 'transition-all duration-200'
           } ${
             isCompleted
-              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/50'
-              : 'bg-white text-slate-900 shadow-xl shadow-black/50 hover:bg-slate-100'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/50'
+              : 'bg-white text-slate-900 shadow-md border border-slate-200 dark:border-transparent dark:shadow-xl dark:shadow-black/50 hover:bg-slate-50 dark:hover:bg-slate-100'
           }`}
           style={{
             transform: trackRef.current

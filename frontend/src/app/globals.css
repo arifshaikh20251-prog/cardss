@@ -3,33 +3,48 @@
 @tailwind utilities;
 
 :root {
+  --foreground-rgb: 15, 23, 42;
+  --background-rgb: 248, 250, 252;
+}
+
+.dark {
   --foreground-rgb: 248, 250, 252;
-  --background-start-rgb: 11, 15, 23;
-  --background-end-rgb: 15, 23, 42;
+  --background-rgb: 9, 13, 22;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: #000000;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbars for both Light and Dark themes */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #0b0f17;
+  background: transparent;
 }
-::-webkit-scrollbar-thumb {
+
+.dark ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @keyframes fadeIn {
@@ -39,4 +54,11 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth micro-transitions for theme toggling */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

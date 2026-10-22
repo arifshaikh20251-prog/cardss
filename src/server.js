@@ -10,12 +10,14 @@ const app = require('./app');
 const { isMockMode } = require('./config/supabase');
 const { startCoolingWorker, stopCoolingWorker } = require('./services/coolingWorker');
 
-const PORT = parseInt(process.env.PORT || '5000', 10);
+// Support numeric ports or Hostinger / Phusion Passenger socket pipes
+const rawPort = process.env.PORT || '5000';
+const PORT = isNaN(rawPort) ? rawPort : parseInt(rawPort, 10);
 
 const server = app.listen(PORT, () => {
   console.log('====================================================');
   console.log('🚀 B2B VENDOR INVOICING & RENTAL MANAGEMENT ENGINE');
-  console.log(`📡 Server listening on: http://localhost:${PORT}`);
+  console.log(`📡 Server listening on: ${typeof PORT === 'number' ? `http://localhost:${PORT}` : PORT}`);
   console.log(`🛡️  Environment:        ${process.env.NODE_ENV || 'development'}`);
   console.log(`⚡ Mock Mode:          ${isMockMode ? 'ENABLED (Phase 1 Sandbox)' : 'DISABLED'}`);
   console.log(`🩺 Health Diagnostic:  http://localhost:${PORT}/api/health`);

@@ -12,6 +12,7 @@
     "dev:all": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run dev\" \"npm run dev --prefix frontend\"",
     "test:all": "npm test && npm run build --prefix frontend",
     "smoke:test": "node scripts/productionSmokeTest.js",
+    "package:hostinger": "node scripts/buildHostingerZip.js",
     "deploy:frontend": "cd frontend && npx vercel",
     "deploy:frontend:prod": "cd frontend && npx vercel --prod"
   },
@@ -37,6 +38,7 @@
     "pdfkit": "^0.20.2"
   },
   "devDependencies": {
+    "archiver": "^8.0.0",
     "concurrently": "^10.0.6",
     "nodemon": "^3.1.9"
   }
