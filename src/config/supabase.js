@@ -89,12 +89,14 @@ if (!supabase) {
           if (tableName === 'users') tableItems = mockStore.users;
           else if (tableName === 'beneficiaries') tableItems = mockStore.beneficiaries;
           else if (tableName === 'transactions') tableItems = mockStore.transactions;
+          else if (tableName === 'audit_logs') tableItems = mockStore.auditLogs;
 
           if (operation === 'INSERT') {
             const inserted = payload.map((item) => {
               if (tableName === 'users') return mockStore.createUser(item);
               if (tableName === 'beneficiaries') return mockStore.createBeneficiary(item);
               if (tableName === 'transactions') return mockStore.createTransaction(item);
+              if (tableName === 'audit_logs') return mockStore.createAuditLog(item);
               return item;
             });
             const resultData = isSingle ? inserted[0] : inserted;

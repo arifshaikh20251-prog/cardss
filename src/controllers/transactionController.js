@@ -18,6 +18,7 @@ const { generateInvoicePdf, maskAccount } = require('../services/invoiceService'
 const gatewayFactory = require('../services/gateway/gatewayFactory');
 const payoutFactory = require('../services/payout/payoutFactory');
 const notificationService = require('../services/notificationService');
+const { recordAuditLog } = require('../middleware/auditLogger');
 
 /**
  * Helper to compute remaining cooling time in seconds and humanized text
@@ -205,6 +206,29 @@ async function initiateTransaction(req, res, next) {
         .single();
       if (error) throw error;
       savedTransaction = data;
+    }
+
+    // Capture RBI Compliance Digital Audit Trail (IP & Device User-Agent)
+    try {
+      await recordAuditLog({
+        entityType: 'TRANSACTION',
+        entityId: savedTransaction.id,
+        action: 'TRANSACTION_INITIATED',
+        actorId: user.id,
+        ipAddress: req.clientIp || req.ip || '127.0.0.1',
+        userAgent: req.userAgent || req.headers['user-agent'] || 'Unknown',
+        payload: {
+          amount: numericAmount,
+          total_debited: feeBreakdown.totalPayable,
+          convenience_fee: feeBreakdown.platformFee,
+          gst_on_fee: feeBreakdown.gstAmount,
+          transfer_type: normalizedType,
+          beneficiary_id: beneficiary.id,
+          gateway_order_id: savedTransaction.gateway_order_id,
+        },
+      });
+    } catch (auditErr) {
+      console.warn('[AUDIT_TRAIL_WARN] Non-blocking audit record error:', auditErr.message);
     }
 
     // Create Gateway Order via active adapter (Mock or Cashfree)

@@ -12,6 +12,12 @@
   --background-rgb: 9, 13, 22;
 }
 
+html,
+body {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

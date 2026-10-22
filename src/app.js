@@ -17,7 +17,14 @@ const devRoutes = require('./routes/dev');
 const kycRoutes = require('./routes/kyc');
 const adminRoutes = require('./routes/admin');
 
+// Security & Audit Middleware imports
+const { authLimiter, transactionLimiter, apiGlobalLimiter } = require('./middleware/rateLimiter');
+const { auditLogger } = require('./middleware/auditLogger');
+
 const app = express();
+
+// Trust reverse proxy (Hostinger Passenger / Nginx / Cloudflare)
+app.set('trust proxy', 1);
 
 // ==============================================================================
 // 1. Security & Production CORS Middleware
@@ -67,9 +74,17 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+// RBI Compliance Digital Audit Logger (IP & Device Fingerprinting)
+app.use(auditLogger);
+
 // ==============================================================================
-// 2. Routing Setup
+// 2. Routing Setup & Rate Limiters
 // ==============================================================================
+// Production API Security Shield (Rate Limiters)
+app.use('/api', apiGlobalLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/transactions', transactionLimiter);
+
 app.get('/', (req, res) => {
   res.json({
     name: 'B2B Vendor Invoicing & Rental Management Engine',

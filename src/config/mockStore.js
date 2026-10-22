@@ -58,6 +58,7 @@ class MockStore {
     ];
 
     this.transactions = [];
+    this.auditLogs = [];
   }
 
   // --- Users Operations ---
@@ -172,6 +173,32 @@ class MockStore {
     return this.transactions.filter(
       (tx) => tx.status === 'IN_COOLING' && tx.cooling_release_at && new Date(tx.cooling_release_at).getTime() <= nowTime
     );
+  }
+
+  // --- Audit Logs Operations ---
+  createAuditLog(data) {
+    const log = {
+      id: data.id || generateUuid(),
+      entity_type: data.entity_type,
+      entity_id: data.entity_id,
+      action: data.action,
+      actor_id: data.actor_id || null,
+      ip_address: data.ip_address || null,
+      user_agent: data.user_agent || null,
+      payload: data.payload || {},
+      created_at: new Date().toISOString(),
+    };
+    this.auditLogs.push(log);
+    return log;
+  }
+
+  getAuditLogs(filters = {}) {
+    return this.auditLogs.filter((log) => {
+      if (filters.entity_type && log.entity_type !== filters.entity_type) return false;
+      if (filters.entity_id && log.entity_id !== filters.entity_id) return false;
+      if (filters.actor_id && log.actor_id !== filters.actor_id) return false;
+      return true;
+    });
   }
 }
 
