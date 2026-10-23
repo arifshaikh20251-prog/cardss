@@ -52,8 +52,22 @@ class GatewayFactory {
    * Strict HMAC-SHA256 Webhook Verification
    */
   verifyWebhookSignature(rawBody, signature, timestamp) {
-    const adapter = this.adapter;
-    return adapter.verifyWebhookSignature(rawBody, signature, timestamp);
+    // 1. Primary active adapter
+    if (this.adapter.verifyWebhookSignature(rawBody, signature, timestamp)) {
+      return true;
+    }
+
+    // 2. Fallback check on Cashfree adapter (if active adapter was mock)
+    if (this.provider !== 'cashfree' && cashfreeGateway.verifyWebhookSignature(rawBody, signature, timestamp)) {
+      return true;
+    }
+
+    // 3. Fallback check on Mock adapter (if active adapter was cashfree)
+    if (this.provider !== 'mock' && mockGateway.verifyWebhookSignature(rawBody, signature, timestamp)) {
+      return true;
+    }
+
+    return false;
   }
 
   /**

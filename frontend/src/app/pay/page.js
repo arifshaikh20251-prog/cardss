@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { formatINR, maskAccount, calculateTotalFromBase } from '../../lib/utils';
 import FeeBreakdown from '../../components/FeeBreakdown';
 import MockPaymentModal from '../../components/MockPaymentModal';
+import CashfreeCheckoutModal from '../../components/CashfreeCheckoutModal';
 import PaymentModeDrawer, { DEFAULT_SAVED_CARDS, getBillDueInfo } from '../../components/PaymentModeDrawer';
 import SwipeToPay from '../../components/SwipeToPay';
 import {
@@ -78,6 +79,7 @@ function PayContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutData, setCheckoutData] = useState(null);
   const [successResult, setSuccessResult] = useState(null);
+  const [gatewayMode, setGatewayMode] = useState('CASHFREE'); // 'CASHFREE' | 'MOCK'
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -212,6 +214,7 @@ function PayContent() {
         coupon_code: appliedCoupon ? appliedCoupon.code : undefined,
         card_id: selectedCard?.id,
         invoice_name: invoiceFile?.name || undefined,
+        gateway_provider: gatewayMode.toLowerCase(),
       });
 
       setCheckoutData(res);
@@ -834,6 +837,38 @@ function PayContent() {
         )}
       </div>
 
+      {/* Gateway Rail Mode Selector */}
+      <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 text-xs shadow-sm">
+        <div className="flex items-center space-x-1.5">
+          <CreditCard className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span className="font-bold text-slate-800 dark:text-slate-200">Gateway Rail:</span>
+        </div>
+        <div className="flex items-center space-x-1 bg-white dark:bg-slate-950 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setGatewayMode('CASHFREE')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+              gatewayMode === 'CASHFREE'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+            }`}
+          >
+            ⚡ Cashfree Sandbox
+          </button>
+          <button
+            type="button"
+            onClick={() => setGatewayMode('MOCK')}
+            className={`px-3 py-1 rounded-lg font-bold text-[11px] transition ${
+              gatewayMode === 'MOCK'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+            }`}
+          >
+            🧪 Mock Gateway
+          </button>
+        </div>
+      </div>
+
       {/* F. Bottom CTA & Trust Badge */}
       <div className="pt-2 space-y-2">
         <SwipeToPay
@@ -863,13 +898,25 @@ function PayContent() {
         amount={breakdown.totalPayable}
       />
 
+      {/* Cashfree Sandbox Drop-in Modal */}
+      {gatewayMode === 'CASHFREE' && (
+        <CashfreeCheckoutModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          checkoutData={checkoutData}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
+
       {/* Mock Payment Gateway Modal */}
-      <MockPaymentModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        checkoutData={checkoutData}
-        onPaymentSuccess={handlePaymentSuccess}
-      />
+      {gatewayMode === 'MOCK' && (
+        <MockPaymentModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          checkoutData={checkoutData}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }

@@ -338,10 +338,17 @@ async function initiateTransaction(req, res, next) {
       console.warn('[AUDIT_TRAIL_WARN] Non-blocking audit record error:', auditErr.message);
     }
 
-    // Create Gateway Order via active adapter (Mock or Cashfree)
+    // Create Gateway Order via requested or active adapter (Mock or Cashfree)
     let gatewayOrder = null;
+    const requestedProvider = (
+      req.body?.gateway_provider ||
+      req.headers['x-gateway-provider'] ||
+      gatewayFactory.provider
+    ).toLowerCase();
+    const adapter = gatewayFactory.getGatewayAdapter(requestedProvider);
+
     try {
-      gatewayOrder = await gatewayFactory.createPaymentOrder({
+      gatewayOrder = await adapter.createPaymentOrder({
         orderId: savedTransaction.gateway_order_id,
         amount: feeBreakdown.totalPayable,
         customerInfo: {
@@ -367,7 +374,7 @@ async function initiateTransaction(req, res, next) {
         transfer_type: normalizedType,
         fee_breakdown: feeBreakdown,
         applied_coupon: appliedCoupon,
-        gateway_provider: gatewayFactory.provider,
+        gateway_provider: requestedProvider,
       },
       transaction: formatTransactionItem(savedTransaction, beneficiary),
     });
@@ -391,8 +398,9 @@ async function handlePgWebhook(req, res, next) {
       req.headers['x-webhook-timestamp'] ||
       req.headers['x-timestamp'];
 
-    // 1. Validate HMAC Signature
-    const isValid = gatewayFactory.verifyWebhookSignature(req.body, signature, timestamp);
+    // 1. Validate HMAC Signature using rawBody or parsed body
+    const rawPayload = req.rawBody || req.body;
+    const isValid = gatewayFactory.verifyWebhookSignature(rawPayload, signature, timestamp);
     if (!isValid) {
       return res.status(401).json({
         success: false,

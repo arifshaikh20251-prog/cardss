@@ -98,6 +98,12 @@ export const api = {
     body: JSON.stringify(payload),
   }),
 
+  postPgWebhook: (payload, headers = {}) => request('/transactions/pg-webhook', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  }),
+
   // Download PDF Tax Invoice
   downloadInvoice: async (transactionId) => {
     const blob = await request(`/transactions/${transactionId}/invoice`, {

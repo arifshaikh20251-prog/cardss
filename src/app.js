@@ -68,7 +68,14 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Body parsers
-app.use(express.json({ limit: '5mb' }));
+app.use(
+  express.json({
+    limit: '5mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // HTTP Request Logger

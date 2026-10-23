@@ -29,6 +29,9 @@ const FILES_TO_SYNC = [
   'src/config/supabase.js',
   'src/services/invoiceService.js',
   'src/services/coolingWorker.js',
+  'src/services/gateway/cashfreeGateway.js',
+  'src/services/gateway/gatewayFactory.js',
+  'src/services/gateway/mockGateway.js',
 ];
 
 async function deploy() {

@@ -1,21 +1,38 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../lib/authContext';
 import { api } from '../../lib/api';
 import TransactionCard from '../../components/TransactionCard';
 import CoolingBanner from '../../components/CoolingBanner';
-import { History, RefreshCw, Loader2, ArrowUpRight } from 'lucide-react';
+import {
+  History,
+  RefreshCw,
+  Loader2,
+  ArrowUpRight,
+  CheckCircle2,
+  Zap,
+} from 'lucide-react';
 import Link from 'next/link';
 
-export default function TransactionsHistoryPage() {
+function TransactionsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, loading: authLoading } = useAuth();
+
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'IN_COOLING' | 'COMPLETED'
+
+  // Dynamic Cashfree Gateway Settlement Status Polling
+  const pollingOrderId = searchParams.get('order_id');
+  const isPollingRequested = searchParams.get('status') === 'polling' || !!pollingOrderId;
+  const [isPolling, setIsPolling] = useState(isPollingRequested);
+  const [pollCount, setPollCount] = useState(0);
+  const [pollSettledTx, setPollSettledTx] = useState(null);
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -31,7 +48,19 @@ export default function TransactionsHistoryPage() {
     try {
       setRefreshing(true);
       const res = await api.getTransactions();
-      setTransactions(res.transactions || []);
+      const list = res.transactions || [];
+      setTransactions(list);
+
+      // Check if target transaction has settled
+      if (pollingOrderId) {
+        const match = list.find(
+          (t) => t.id === pollingOrderId || t.gateway_order_id === pollingOrderId
+        );
+        if (match && match.status !== 'INITIATED') {
+          setPollSettledTx(match);
+          setIsPolling(false);
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,6 +68,31 @@ export default function TransactionsHistoryPage() {
       setRefreshing(false);
     }
   };
+
+  // Dynamic Polling Interval
+  useEffect(() => {
+    if (!isPolling) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      return;
+    }
+
+    pollIntervalRef.current = setInterval(() => {
+      setPollCount((prev) => {
+        if (prev >= 7) {
+          // Stop polling after 8 attempts (16s)
+          setIsPolling(false);
+          clearInterval(pollIntervalRef.current);
+          return prev;
+        }
+        fetchTransactions();
+        return prev + 1;
+      });
+    }, 2000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [isPolling, pollingOrderId]);
 
   const filtered = transactions.filter((t) => {
     if (filterTab === 'IN_COOLING') return t.status === 'IN_COOLING';
@@ -68,6 +122,55 @@ export default function TransactionsHistoryPage() {
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
         </button>
       </div>
+
+      {/* Dynamic Status Polling Banner (Cashfree Gateway Handshake) */}
+      {isPolling && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-amber-500/10 to-indigo-500/10 border border-indigo-500/30 flex items-center justify-between animate-pulse">
+          <div className="flex items-center space-x-2.5">
+            <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1">
+                <span>Cashfree Gateway Settlement Handshake</span>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono font-normal">
+                  ({pollCount + 1}/8)
+                </span>
+              </span>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                Polling live status for Order #{pollingOrderId ? pollingOrderId.slice(0, 12) : 'active'}...
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsPolling(false)}
+            className="text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Settled Notification Banner */}
+      {!isPolling && pollSettledTx && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between animate-in fade-in">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
+                Gateway Settlement Verified!
+              </span>
+              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
+                Transaction status transitioned to <strong className="font-mono">{pollSettledTx.status}</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setPollSettledTx(null)}
+            className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* Active Cooling Alert Banner */}
       <CoolingBanner transactions={transactions} />
@@ -141,5 +244,20 @@ export default function TransactionsHistoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function TransactionsHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-2">
+          <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
+          <span className="text-xs text-slate-500 dark:text-slate-400">Loading ledger records...</span>
+        </div>
+      }
+    >
+      <TransactionsContent />
+    </Suspense>
   );
 }
