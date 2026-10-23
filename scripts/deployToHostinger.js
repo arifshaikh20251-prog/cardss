@@ -27,6 +27,7 @@ const FILES_TO_SYNC = [
   'src/controllers/transactionController.js',
   'src/routes/admin.js',
   'src/routes/auth.js',
+  'src/routes/health.js',
   'src/routes/notifications.js',
   'src/routes/referrals.js',
   'src/routes/transactions.js',
@@ -38,6 +39,7 @@ const FILES_TO_SYNC = [
   'src/services/gateway/gatewayFactory.js',
   'src/services/gateway/mockGateway.js',
   'scripts/backupLedger.js',
+  'scripts/auditLiveProduction.js',
 ];
 
 async function deploy() {

@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
     status: 'UP',
     service: 'B2B Vendor Invoicing & Rental Engine',
     version: '1.0.0',
+    nodeVersion: process.version,
     timestamp: new Date().toISOString(),
     uptime: `${process.uptime().toFixed(2)}s`,
     environment: process.env.NODE_ENV || 'development',
