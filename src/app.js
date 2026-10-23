@@ -18,6 +18,7 @@ const kycRoutes = require('./routes/kyc');
 const adminRoutes = require('./routes/admin');
 const couponRoutes = require('./routes/coupons');
 const referralRoutes = require('./routes/referrals');
+const notificationRoutes = require('./routes/notifications');
 
 // Security & Audit Middleware imports
 const { authLimiter, transactionLimiter, apiGlobalLimiter } = require('./middleware/rateLimiter');
@@ -131,6 +132,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Sandbox simulation endpoints (active only in non-production)
 if (process.env.NODE_ENV !== 'production') {

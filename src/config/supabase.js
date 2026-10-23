@@ -90,6 +90,7 @@ if (!supabase) {
           else if (tableName === 'beneficiaries') tableItems = mockStore.beneficiaries;
           else if (tableName === 'transactions') tableItems = mockStore.transactions;
           else if (tableName === 'audit_logs') tableItems = mockStore.auditLogs;
+          else if (tableName === 'notifications') tableItems = mockStore.notifications;
 
           if (operation === 'INSERT') {
             const inserted = payload.map((item) => {
@@ -97,6 +98,7 @@ if (!supabase) {
               if (tableName === 'beneficiaries') return mockStore.createBeneficiary(item);
               if (tableName === 'transactions') return mockStore.createTransaction(item);
               if (tableName === 'audit_logs') return mockStore.createAuditLog(item);
+              if (tableName === 'notifications') return mockStore.createNotification(item);
               return item;
             });
             const resultData = isSingle ? inserted[0] : inserted;
@@ -110,6 +112,7 @@ if (!supabase) {
               let updated = null;
               if (tableName === 'users') updated = mockStore.updateUser(idFilter.value, payload);
               if (tableName === 'transactions') updated = mockStore.updateTransaction(idFilter.value, payload);
+              if (tableName === 'notifications') updated = mockStore.markNotificationAsRead(idFilter.value);
               resolve({ data: isSingle ? updated : (updated ? [updated] : []), error: null });
               return;
             }

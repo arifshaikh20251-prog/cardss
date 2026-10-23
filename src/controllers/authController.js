@@ -124,6 +124,9 @@ async function verifyOtp(req, res, next) {
         id: user.id,
         mobile: user.mobile,
         full_name: user.full_name,
+        business_name: user.business_name || user.full_name,
+        billing_address: user.billing_address || null,
+        email: user.email || null,
         pan_number: user.pan_number,
         kyc_status: user.kyc_status,
         is_cooling_cleared: user.is_cooling_cleared,
@@ -135,8 +138,78 @@ async function verifyOtp(req, res, next) {
   }
 }
 
+/**
+ * PUT /api/auth/profile
+ * Updates authenticated user's business profile settings:
+ * business_name, billing_address, email
+ */
+async function updateProfile(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { business_name, billing_address, email, full_name } = req.body;
+
+    // Validate email format if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'Invalid email address format.',
+      });
+    }
+
+    const updates = {};
+    if (business_name !== undefined) updates.business_name = String(business_name).trim();
+    if (billing_address !== undefined) updates.billing_address = String(billing_address).trim();
+    if (email !== undefined) updates.email = String(email).trim().toLowerCase();
+    if (full_name !== undefined) updates.full_name = String(full_name).trim();
+
+    let updatedUser = null;
+    if (isMockMode || supabase.isMock) {
+      updatedUser = mockStore.updateUser(userId, updates);
+    } else {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      updatedUser = data;
+    }
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'UserNotFound',
+        message: 'User account not found.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Business profile updated successfully.',
+      user: {
+        id: updatedUser.id,
+        mobile: updatedUser.mobile,
+        full_name: updatedUser.full_name,
+        business_name: updatedUser.business_name || updatedUser.full_name,
+        billing_address: updatedUser.billing_address || null,
+        email: updatedUser.email || null,
+        pan_number: updatedUser.pan_number,
+        kyc_status: updatedUser.kyc_status,
+        is_cooling_cleared: updatedUser.is_cooling_cleared,
+        referral_code: updatedUser.referral_code,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   sendOtp,
   verifyOtp,
+  updateProfile,
   STATIC_MOCK_OTP,
 };

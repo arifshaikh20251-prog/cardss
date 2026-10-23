@@ -72,6 +72,35 @@ class MockStore {
     this.auditLogs = [];
     this.referrals = [];
     this.userCoupons = [];
+    this.notifications = [
+      {
+        id: 'notif-seed-01',
+        user_id: 'usr-1111-1111-1111',
+        type: 'SETTLED',
+        title: 'Payout Settled via IMPS Rail',
+        message: '₹12,000.00 was credited to InfraTech Hardware Supplies. Bank UTR: UTR-IMPS-892173456.',
+        is_read: false,
+        created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'notif-seed-02',
+        user_id: 'usr-1111-1111-1111',
+        type: 'REWARD',
+        title: 'Referral Program Active',
+        message: 'Share your referral code PAY987 with business associates to earn ₹25 on every vendor payout!',
+        is_read: false,
+        created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'notif-seed-03',
+        user_id: 'usr-1111-1111-1111',
+        type: 'INFO',
+        title: 'KYC Verification Approved',
+        message: 'Your corporate KYC and PAN AAACA1234F have been verified by NSDL & UIDAI escrow rails.',
+        is_read: true,
+        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ];
   }
 
   // --- Users Operations ---
@@ -284,6 +313,51 @@ class MockStore {
       if (filters.actor_id && log.actor_id !== filters.actor_id) return false;
       return true;
     });
+  }
+
+  // --- In-App Notifications Operations ---
+  createNotification(data) {
+    const notif = {
+      id: data.id || generateUuid(),
+      user_id: data.user_id,
+      title: data.title,
+      message: data.message,
+      type: data.type || 'INFO', // 'SETTLED' | 'COOLING' | 'REWARD' | 'PAYMENT' | 'INFO'
+      metadata: data.metadata || {},
+      is_read: data.is_read || false,
+      created_at: data.created_at || new Date().toISOString(),
+    };
+    this.notifications.unshift(notif);
+    return notif;
+  }
+
+  getNotificationsByUserId(userId) {
+    return this.notifications.filter((n) => n.user_id === userId);
+  }
+
+  findNotificationById(id) {
+    return this.notifications.find((n) => n.id === id) || null;
+  }
+
+  markNotificationAsRead(id, userId) {
+    const notif = this.notifications.find((n) => n.id === id && (!userId || n.user_id === userId));
+    if (notif) {
+      notif.is_read = true;
+      notif.read_at = new Date().toISOString();
+    }
+    return notif;
+  }
+
+  markAllNotificationsAsRead(userId) {
+    let updatedCount = 0;
+    this.notifications.forEach((n) => {
+      if (n.user_id === userId && !n.is_read) {
+        n.is_read = true;
+        n.read_at = new Date().toISOString();
+        updatedCount++;
+      }
+    });
+    return updatedCount;
   }
 }
 

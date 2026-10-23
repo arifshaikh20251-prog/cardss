@@ -65,6 +65,23 @@ export const api = {
     body: JSON.stringify(payload),
   }),
 
+  // Update Dynamic Business Profile Settings
+  updateProfile: (payload) => request('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }),
+
+  // In-App Notification Bell Center
+  getNotifications: () => request('/notifications'),
+
+  markNotificationAsRead: (id) => request(`/notifications/${id}/read`, {
+    method: 'POST',
+  }),
+
+  markAllNotificationsAsRead: () => request('/notifications/read-all', {
+    method: 'POST',
+  }),
+
   // Beneficiaries endpoints
   getBeneficiaries: () => request('/beneficiaries'),
 
@@ -84,6 +101,30 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+
+  // Download Monthly Account Statement PDF
+  downloadMonthlyStatement: async ({ month, year } = {}) => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    if (year) params.append('year', year);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+
+    const blob = await request(`/transactions/statement${queryString}`, {
+      method: 'GET',
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const fileMonth = String(month || new Date().getMonth() + 1).padStart(2, '0');
+    const fileYear = year || new Date().getFullYear();
+    link.setAttribute('download', `AccountStatement-${fileYear}-${fileMonth}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 
   // Promotional Coupons
   getCoupons: () => request('/coupons'),

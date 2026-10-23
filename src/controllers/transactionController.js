@@ -17,6 +17,7 @@ const { mockStore, isMockMode, supabase } = require('../config/supabase');
 const {
   generateInvoicePdf,
   generateCommercialVoucherPdf,
+  generateMonthlyStatementPdf,
   maskAccount,
 } = require('../services/invoiceService');
 const gatewayFactory = require('../services/gateway/gatewayFactory');
@@ -80,6 +81,16 @@ async function triggerReferralRewardIfEligible(userId, transaction) {
           description: 'Referral Reward: ₹25 discount coupon earned from friend referral',
           badge: 'Referral ₹25 OFF',
         });
+
+        // In-App Notification for Referrer
+        mockStore.createNotification({
+          user_id: referral.referrer_id,
+          type: 'REWARD',
+          title: 'Referral Reward Earned! 🎉',
+          message: 'Your friend completed their first transfer! A ₹25 discount coupon (REF25) has been added to your account.',
+          metadata: { coupon_code: 'REF25', discount: 25 },
+        });
+
         console.log(`[REFERRAL_REWARD] Issued ₹25 reward coupon to referrer ${referral.referrer_id}`);
       }
     } else {
@@ -556,17 +567,41 @@ async function handlePgWebhook(req, res, next) {
       try {
         const pdfBuffer = await generateInvoicePdf(updatedTransaction, user, beneficiary || {});
         if (updatedStatus === 'IN_COOLING') {
+          mockStore.createNotification({
+            user_id: transaction.user_id,
+            type: 'COOLING',
+            title: 'Payment Secured • Cooling Window Active',
+            message: `Transfer of ₹${transaction.amount} is authorized. Due to security cooling, payout releases in 24 hours.`,
+            metadata: { transaction_id: transaction.id },
+          });
+
           await Promise.allSettled([
             notificationService.sendCoolingAlert({ user, transaction: updatedTransaction }),
             notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
           ]);
         } else if (updatedStatus === 'PAYOUT_SUCCESS') {
+          mockStore.createNotification({
+            user_id: transaction.user_id,
+            type: 'SETTLED',
+            title: 'Payout Settled via IMPS Rail',
+            message: `₹${transaction.amount} credited to ${beneficiary?.account_holder_name || 'beneficiary'}. Bank UTR: ${utrNumber}.`,
+            metadata: { transaction_id: transaction.id, utr_number: utrNumber },
+          });
+
           await triggerReferralRewardIfEligible(transaction.user_id, updatedTransaction);
           await Promise.allSettled([
             notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
             notificationService.sendPayoutSettledAlert({ user, transaction: updatedTransaction, utr: utrNumber }),
           ]);
         } else {
+          mockStore.createNotification({
+            user_id: transaction.user_id,
+            type: 'PAYMENT',
+            title: 'Payment Captured • Batch Scheduled',
+            message: `Payment of ₹${transaction.amount} captured. Next-day batch commercial settlement scheduled.`,
+            metadata: { transaction_id: transaction.id },
+          });
+
           await notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer });
         }
       } catch (notifErr) {
@@ -724,17 +759,41 @@ async function mockPgWebhook(req, res, next) {
     try {
       const pdfBuffer = await generateInvoicePdf(updatedTransaction, user, beneficiary || {});
       if (updatedStatus === 'IN_COOLING') {
+        mockStore.createNotification({
+          user_id: transaction.user_id,
+          type: 'COOLING',
+          title: 'Payment Secured • Cooling Window Active',
+          message: `Transfer of ₹${transaction.amount} is authorized. Due to security cooling, payout releases in 24 hours.`,
+          metadata: { transaction_id: transaction.id },
+        });
+
         await Promise.allSettled([
           notificationService.sendCoolingAlert({ user, transaction: updatedTransaction }),
           notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
         ]);
       } else if (updatedStatus === 'PAYOUT_SUCCESS') {
+        mockStore.createNotification({
+          user_id: transaction.user_id,
+          type: 'SETTLED',
+          title: 'Payout Settled via IMPS Rail',
+          message: `₹${transaction.amount} credited to ${beneficiary?.account_holder_name || 'beneficiary'}. Bank UTR: ${utrNumber}.`,
+          metadata: { transaction_id: transaction.id, utr_number: utrNumber },
+        });
+
         await triggerReferralRewardIfEligible(transaction.user_id, updatedTransaction);
         await Promise.allSettled([
           notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
           notificationService.sendPayoutSettledAlert({ user, transaction: updatedTransaction, utr: utrNumber }),
         ]);
       } else {
+        mockStore.createNotification({
+          user_id: transaction.user_id,
+          type: 'PAYMENT',
+          title: 'Payment Captured • Batch Scheduled',
+          message: `Payment of ₹${transaction.amount} captured. Next-day batch commercial settlement scheduled.`,
+          metadata: { transaction_id: transaction.id },
+        });
+
         await notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer });
       }
     } catch (notifErr) {
@@ -1122,6 +1181,92 @@ async function downloadCommercialVoucherPdf(req, res, next) {
   }
 }
 
+/**
+ * Download Monthly Account Statement PDF
+ * GET /api/transactions/statement?month=XX&year=XXXX
+ */
+async function downloadMonthlyStatementPdf(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const now = new Date();
+    const month = req.query.month ? parseInt(req.query.month, 10) : now.getMonth() + 1;
+    const year = req.query.year ? parseInt(req.query.year, 10) : now.getFullYear();
+
+    if (isNaN(month) || month < 1 || month > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'InvalidMonth',
+        message: 'Month must be an integer between 1 and 12.',
+      });
+    }
+
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      return res.status(400).json({
+        success: false,
+        error: 'InvalidYear',
+        message: 'Year must be a valid 4-digit year.',
+      });
+    }
+
+    let user = null;
+    let allTransactions = [];
+
+    if (isMockMode || supabase.isMock) {
+      user = mockStore.findUserById(userId);
+      allTransactions = mockStore.transactions.filter((t) => t.user_id === userId);
+    } else {
+      const { data: userData } = await supabase.from('users').select('*').eq('id', userId).single();
+      user = userData;
+
+      const { data: txData } = await supabase
+        .from('transactions')
+        .select('*, beneficiaries(account_holder_name, bank_name)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      allTransactions = txData || [];
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'UserNotFound',
+        message: 'Authenticated user account not found.',
+      });
+    }
+
+    // Filter transactions for specified month and year
+    const monthlyTransactions = allTransactions.filter((tx) => {
+      const txDate = new Date(tx.created_at || Date.now());
+      return txDate.getMonth() + 1 === month && txDate.getFullYear() === year;
+    });
+
+    // Populate beneficiary details if needed
+    const enrichedTransactions = monthlyTransactions.map((tx) => {
+      if (tx.beneficiaries) return tx;
+      const ben = mockStore.findBeneficiaryById(tx.beneficiary_id);
+      return {
+        ...tx,
+        beneficiary_name: ben?.account_holder_name || 'Designated Beneficiary',
+      };
+    });
+
+    const pdfBuffer = await generateMonthlyStatementPdf({
+      user,
+      month,
+      year,
+      transactions: enrichedTransactions,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="AccountStatement-${year}-${String(month).padStart(2, '0')}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   initiateTransaction,
   handlePgWebhook,
@@ -1131,6 +1276,7 @@ module.exports = {
   getTransactionAnalytics,
   downloadInvoicePdf,
   downloadCommercialVoucherPdf,
+  downloadMonthlyStatementPdf,
   sendEmailInvoice,
 };
 

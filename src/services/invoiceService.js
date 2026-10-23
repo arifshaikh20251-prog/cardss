@@ -952,9 +952,313 @@ function generateCommercialVoucherPdf(transaction, user = {}, beneficiary = {}) 
   });
 }
 
+/**
+ * Generates an itemized, bank-grade Monthly Account Statement PDF
+ *
+ * @param {Object} options
+ * @param {Object} options.user - User / Enterprise account entity
+ * @param {number|string} options.month - Month (1-12)
+ * @param {number|string} options.year - Year (e.g. 2026)
+ * @param {Array} options.transactions - List of transactions for this period
+ * @returns {Promise<Buffer>} Resolves to PDF binary buffer
+ */
+function generateMonthlyStatementPdf({ user = {}, month, year, transactions = [] }) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 36,
+        info: {
+          Title: `Monthly Statement - ${month}/${year}`,
+          Author: 'B2B UtilityPay Network',
+          Subject: 'Monthly Account Statement & Settlement Ledger',
+        },
+      });
+
+      const buffers = [];
+      doc.on('data', (chunk) => buffers.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', (err) => reject(err));
+
+      const primaryColor = '#0F172A';
+      const navyColor = '#1E293B';
+      const emeraldColor = '#059669';
+      const borderColor = '#CBD5E1';
+      const lightBg = '#F8FAFC';
+      const mutedColor = '#64748B';
+
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const monthNum = parseInt(month, 10) || new Date().getMonth() + 1;
+      const yearNum = parseInt(year, 10) || new Date().getFullYear();
+      const monthLabel = monthNames[monthNum - 1] || 'Current Month';
+
+      // Computations
+      let totalInflow = 0;
+      let totalDisbursed = 0;
+      let totalFees = 0;
+      let successfulCount = 0;
+
+      transactions.forEach((tx) => {
+        const principal = parseFloat(tx.amount || 0);
+        const fee = parseFloat(tx.convenience_fee || 0);
+        const gst = parseFloat(tx.gst_on_fee || 0);
+        const debited = parseFloat(tx.total_debited || (principal + fee + gst));
+
+        if (tx.status !== 'FAILED') {
+          totalInflow += debited;
+          totalDisbursed += principal;
+          totalFees += (fee + gst);
+        }
+        if (tx.status === 'PAYOUT_SUCCESS') {
+          successfulCount++;
+        }
+      });
+
+      // Outer Page Border
+      const drawBorders = () => {
+        doc.rect(24, 24, 547, 794).lineWidth(0.75).strokeColor('#CBD5E1').stroke();
+      };
+      drawBorders();
+
+      // Header Banner
+      doc.rect(34, 34, 527, 60).fill('#0F172A');
+
+      doc
+        .fillColor('#FFFFFF')
+        .fontSize(13)
+        .font('Helvetica-Bold')
+        .text('CONSOLIDATED MONTHLY ACCOUNT STATEMENT', 46, 46, { width: 360 });
+
+      doc
+        .fillColor('#94A3B8')
+        .fontSize(7.5)
+        .font('Helvetica')
+        .text(`Statement Period: ${monthLabel} ${yearNum} | Core Banking IMPS & Escrow Settlement Rail`, 46, 68);
+
+      // Top Right Statement Badge
+      doc
+        .roundedRect(420, 42, 130, 44, 4)
+        .fill('#1E293B')
+        .strokeColor('#F59E0B')
+        .lineWidth(1)
+        .stroke();
+
+      doc
+        .fillColor('#FCD34D')
+        .fontSize(8)
+        .font('Helvetica-Bold')
+        .text('OFFICIAL STATEMENT', 420, 50, { align: 'center', width: 130 });
+
+      doc
+        .fillColor('#38BDF8')
+        .fontSize(7)
+        .font('Helvetica')
+        .text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 420, 64, { align: 'center', width: 130 });
+
+      // Parties & Summary Grid
+      let y = 102;
+      const colW = 258;
+      const boxH = 92;
+
+      // Left Box: User Profile Details
+      doc.rect(34, y, colW, boxH).fill('#FFFFFF').strokeColor(borderColor).lineWidth(0.75).stroke();
+      doc.rect(34, y, colW, 18).fill('#F1F5F9');
+      doc.fillColor(navyColor).fontSize(8).font('Helvetica-Bold').text('ENTERPRISE / ACCOUNT DETAILS', 44, y + 5);
+
+      doc
+        .fillColor(primaryColor)
+        .fontSize(7.5)
+        .font('Helvetica-Bold')
+        .text('Entity Name: ', 44, y + 24, { continued: true })
+        .font('Helvetica')
+        .text(user.business_name || user.full_name || 'Corporate Remitter')
+        .font('Helvetica-Bold')
+        .text('Registered Mobile: ', 44, y + 37, { continued: true })
+        .font('Helvetica')
+        .text(maskMobile(user.mobile))
+        .font('Helvetica-Bold')
+        .text('PAN Number: ', 44, y + 50, { continued: true })
+        .font('Helvetica')
+        .text(maskPAN(user.pan_number))
+        .font('Helvetica-Bold')
+        .text('Billing Address: ', 44, y + 63, { continued: true })
+        .font('Helvetica')
+        .text(user.billing_address || 'Registered Corporate Office, India', { width: 238, ellipsis: true })
+        .font('Helvetica-Bold')
+        .text('Email: ', 44, y + 76, { continued: true })
+        .font('Helvetica')
+        .text(user.email || 'billing@utilitypay.in');
+
+      // Right Box: Monthly Financial Summary
+      const rightX = 303;
+      doc.rect(rightX, y, colW, boxH).fill('#FFFFFF').strokeColor(borderColor).lineWidth(0.75).stroke();
+      doc.rect(rightX, y, colW, 18).fill('#ECFDF5');
+      doc.fillColor(emeraldColor).fontSize(8).font('Helvetica-Bold').text('MONTHLY SUMMARY AUDIT (INR)', rightX + 10, y + 5);
+
+      doc
+        .fillColor(primaryColor)
+        .fontSize(7.5)
+        .font('Helvetica-Bold')
+        .text('Total Inflow (Cards Debited): ', rightX + 10, y + 24, { continued: true })
+        .font('Helvetica-Bold')
+        .fillColor('#047857')
+        .text(`INR ${formatNumberINR(totalInflow)}`)
+        .font('Helvetica-Bold')
+        .fillColor(primaryColor)
+        .text('Net Disbursed to Beneficiaries: ', rightX + 10, y + 39, { continued: true })
+        .font('Helvetica')
+        .text(`INR ${formatNumberINR(totalDisbursed)}`)
+        .font('Helvetica-Bold')
+        .text('Total Processing Fees (incl. 18% GST): ', rightX + 10, y + 54, { continued: true })
+        .font('Helvetica')
+        .text(`INR ${formatNumberINR(totalFees)}`)
+        .font('Helvetica-Bold')
+        .text('Transactions Settled: ', rightX + 10, y + 69, { continued: true })
+        .font('Helvetica')
+        .text(`${successfulCount} of ${transactions.length} transfers`);
+
+      // Ledger Table Header
+      y = 202;
+      const drawTableHeader = (posY) => {
+        doc.rect(34, posY, 527, 20).fill('#0F172A');
+        doc
+          .fillColor('#FFFFFF')
+          .fontSize(7.5)
+          .font('Helvetica-Bold')
+          .text('Date & Time', 42, posY + 6, { width: 85 })
+          .text('Beneficiary & Purpose', 130, posY + 6, { width: 145 })
+          .text('Speed', 280, posY + 6, { width: 50 })
+          .text('UTR / Gateway Order', 335, posY + 6, { width: 105 })
+          .text('Debit (INR)', 445, posY + 6, { align: 'right', width: 55 })
+          .text('Status', 505, posY + 6, { align: 'right', width: 48 });
+      };
+
+      drawTableHeader(y);
+      y += 20;
+
+      if (transactions.length === 0) {
+        doc.rect(34, y, 527, 40).fill(lightBg).strokeColor(borderColor).stroke();
+        doc
+          .fillColor(mutedColor)
+          .fontSize(8.5)
+          .font('Helvetica')
+          .text(`No transaction records found for ${monthLabel} ${yearNum}.`, 44, y + 14, {
+            align: 'center',
+            width: 507,
+          });
+        y += 40;
+      } else {
+        transactions.forEach((tx, i) => {
+          // Check for page overflow
+          if (y > 740) {
+            doc.addPage();
+            drawBorders();
+            y = 40;
+            drawTableHeader(y);
+            y += 20;
+          }
+
+          const rowH = 24;
+          const bg = i % 2 === 0 ? '#FFFFFF' : lightBg;
+          doc.rect(34, y, 527, rowH).fill(bg).strokeColor(borderColor).lineWidth(0.5).stroke();
+
+          const txDate = new Date(tx.created_at || Date.now()).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit',
+          });
+          const benName = (tx.beneficiaries?.account_holder_name || tx.beneficiary_name || 'Designated Beneficiary');
+          const purposeText = (tx.purpose || 'VENDOR').replace(/_/g, ' ');
+          const utr = tx.utr_number || tx.gateway_order_id || 'PENDING';
+          const gross = parseFloat(tx.total_debited || tx.amount || 0);
+
+          let statusColor = '#047857'; // emerald
+          if (tx.status === 'IN_COOLING') statusColor = '#D97706'; // amber
+          if (tx.status === 'FAILED') statusColor = '#DC2626'; // red
+
+          doc
+            .fillColor(primaryColor)
+            .fontSize(7)
+            .font('Helvetica')
+            .text(txDate, 42, y + 7, { width: 85 })
+            .font('Helvetica-Bold')
+            .text(benName, 130, y + 4, { width: 145, ellipsis: true })
+            .font('Helvetica')
+            .fillColor(mutedColor)
+            .text(purposeText, 130, y + 14, { width: 145, ellipsis: true })
+            .fillColor(primaryColor)
+            .text(tx.transfer_type || 'STD', 280, y + 7, { width: 50 })
+            .font('Helvetica-Bold')
+            .text(utr, 335, y + 7, { width: 105, ellipsis: true })
+            .font('Helvetica-Bold')
+            .text(formatNumberINR(gross), 445, y + 7, { align: 'right', width: 55 })
+            .fillColor(statusColor)
+            .text(tx.status, 505, y + 7, { align: 'right', width: 48 });
+
+          y += rowH;
+        });
+      }
+
+      // Bottom Digital Certification Stamp (if space allows on current page, else on current bottom)
+      if (y > 690) {
+        doc.addPage();
+        drawBorders();
+        y = 40;
+      }
+
+      const certY = Math.max(y + 12, 690);
+      doc
+        .roundedRect(34, certY, 527, 72, 4)
+        .fill('#F8FAFC')
+        .strokeColor('#059669')
+        .lineWidth(1)
+        .stroke();
+
+      doc
+        .fillColor('#047857')
+        .fontSize(8)
+        .font('Helvetica-Bold')
+        .text('★ DIGITAL STATEMENT OF SETTLEMENT & STATUTORY RECORD ★', 44, certY + 8, {
+          align: 'center',
+          width: 507,
+        });
+
+      doc
+        .fillColor('#334155')
+        .fontSize(7)
+        .font('Helvetica')
+        .text(
+          'This monthly statement is an electronic legal record certified under Section 65B of the Indian Information Technology Act, 2000. All transactions reflect confirmed settlement via regulated RBI escrow nodal accounts and Core Banking System IMPS/NEFT rails. For any reconciliation discrepancies, contact support@utilitypay.in.',
+          44,
+          certY + 22,
+          { align: 'justify', width: 507, lineGap: 1.5 }
+        );
+
+      doc
+        .fillColor(mutedColor)
+        .fontSize(6.5)
+        .font('Helvetica')
+        .text(
+          `B2B UtilityPay Network Platform | Generated for ${user.full_name || 'Client'} | Tamper-Evident Digital Ledger`,
+          44,
+          certY + 54,
+          { align: 'center', width: 507 }
+        );
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 module.exports = {
   generateInvoicePdf,
   generateCommercialVoucherPdf,
+  generateMonthlyStatementPdf,
   formatNumberINR,
   maskMobile,
   maskPAN,

@@ -7,6 +7,8 @@ import { api } from '../../lib/api';
 import { formatINR } from '../../lib/utils';
 import CoolingBanner from '../../components/CoolingBanner';
 import TransactionCard from '../../components/TransactionCard';
+import ProfileModal from '../../components/ProfileModal';
+import MonthlyStatementModal from '../../components/MonthlyStatementModal';
 import Link from 'next/link';
 import {
   Building2,
@@ -27,6 +29,7 @@ import {
   Copy,
   Check,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -39,6 +42,8 @@ export default function DashboardPage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [statementModalOpen, setStatementModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -99,17 +104,26 @@ export default function DashboardPage() {
             Fintech Credit Engine
           </span>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-0.5">
-            Welcome, {user?.full_name?.split(' ')[0] || 'Partner'}
+            Welcome, {user?.business_name || user?.full_name?.split(' ')[0] || 'Partner'}
           </h2>
         </div>
-        <button
-          onClick={loadDashboardData}
-          disabled={refreshing}
-          className="p-2 rounded-xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition active:scale-95"
-          title="Refresh Data"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setProfileModalOpen(true)}
+            className="p-2 rounded-xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm transition active:scale-95"
+            title="Edit Business Profile"
+          >
+            <Building2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={loadDashboardData}
+            disabled={refreshing}
+            className="p-2 rounded-xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition active:scale-95"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Pending KYC Action Banner */}
@@ -445,6 +459,18 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Profile Settings Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* Monthly Statement Modal */}
+      <MonthlyStatementModal
+        isOpen={statementModalOpen}
+        onClose={() => setStatementModalOpen(false)}
+      />
     </div>
   );
 }
