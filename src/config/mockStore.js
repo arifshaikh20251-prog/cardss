@@ -101,6 +101,22 @@ class MockStore {
         created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
       },
     ];
+
+    this.broadcastPromotions = [
+      {
+        id: 'promo-flash-01',
+        title: '⚡ Month-End Commercial Bill Rush',
+        subtitle: 'Transfer above ₹25,000 today & save flat ₹25 on convenience fees!',
+        coupon_code: 'SAVE25',
+        badge_text: '🔥 FLASH OFFER',
+        cta_label: 'Claim Offer & Pay Now',
+        target_amount: 25000,
+        target_audience: 'ALL',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ];
   }
 
   // --- Users Operations ---
@@ -358,6 +374,65 @@ class MockStore {
       }
     });
     return updatedCount;
+  }
+
+  // --- Broadcast Promotions Operations ---
+  getActivePromotion(user = null) {
+    const promo = this.broadcastPromotions.find((p) => {
+      if (!p.is_active) return false;
+      if (p.expires_at && new Date(p.expires_at).getTime() < Date.now()) return false;
+      return true;
+    });
+
+    if (!promo) return null;
+
+    if (promo.target_audience === 'HIGH_VOLUME') {
+      if (!user) return null;
+      const completedCount = this.transactions.filter(
+        (t) => t.user_id === user.id && ['SUCCESS', 'SETTLED', 'PAYOUT_SUCCESS', 'IN_COOLING'].includes(t.status)
+      ).length;
+      if (completedCount < 3) return null;
+    }
+
+    return { ...promo };
+  }
+
+  getBroadcastPromotions() {
+    return this.broadcastPromotions.map((p) => ({ ...p }));
+  }
+
+  updateBroadcastPromotion(data) {
+    let promo = this.broadcastPromotions[0];
+    if (!promo) {
+      promo = {
+        id: data.id || 'promo-flash-01',
+        title: data.title || '⚡ Month-End Commercial Bill Rush',
+        subtitle: data.subtitle || 'Transfer above ₹25,000 today & save flat ₹25 on convenience fees!',
+        coupon_code: data.coupon_code || 'SAVE25',
+        badge_text: data.badge_text || '🔥 FLASH OFFER',
+        cta_label: data.cta_label || 'Claim Offer & Pay Now',
+        target_amount: data.target_amount ? Number(data.target_amount) : 25000,
+        target_audience: data.target_audience || 'ALL',
+        is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+        created_at: new Date().toISOString(),
+        expires_at: data.expires_at || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+      this.broadcastPromotions.push(promo);
+      return { ...promo };
+    }
+
+    if (data.title !== undefined) promo.title = String(data.title);
+    if (data.subtitle !== undefined) promo.subtitle = String(data.subtitle);
+    if (data.coupon_code !== undefined) promo.coupon_code = String(data.coupon_code).toUpperCase();
+    if (data.badge_text !== undefined) promo.badge_text = String(data.badge_text);
+    if (data.cta_label !== undefined) promo.cta_label = String(data.cta_label);
+    if (data.target_amount !== undefined) promo.target_amount = Number(data.target_amount);
+    if (data.target_audience !== undefined) promo.target_audience = data.target_audience;
+    if (data.is_active !== undefined) promo.is_active = Boolean(data.is_active);
+    if (data.expires_at !== undefined) promo.expires_at = data.expires_at;
+    promo.updated_at = new Date().toISOString();
+
+    return { ...promo };
   }
 }
 

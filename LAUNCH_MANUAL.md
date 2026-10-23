@@ -284,6 +284,26 @@ To add a seasonal or campaign promotional code:
 
 ---
 
+### 4.4 Dynamic Admin-Managed Promotional Pop-Up Modal (Flash Offers)
+
+Operators can trigger instant, high-converting flash offer banners and modal overlays across all active client mobile devices without code deployments:
+
+1.  **Access Manager:** Navigate to [https://cardss-gilt.vercel.app/admin](https://cardss-gilt.vercel.app/admin) $\rightarrow$ Select the **"Flash Offers"** tab.
+2.  **Customizable Campaign Attributes:**
+    *   **Offer Headline:** e.g. `⚡ Month-End Commercial Bill Rush`
+    *   **Shimmering Badge:** e.g. `🔥 FLASH OFFER` or `WEEKEND SPECIAL`
+    *   **Attached Coupon Code:** Choose from presets (`SAVE10`, `SAVE25`, `SAVE50`, `REF15`) or custom coupon.
+    *   **Target Minimum Amount:** e.g. `₹25,000` (auto-populates in the `/pay` checkout sheet).
+    *   **Primary CTA Button Label:** e.g. `Claim Offer & Pay Now`.
+    *   **Audience Targeting:** `All Users` or `High-Volume Users` (>= 3 lifetime payouts).
+    *   **Master Power Switch:** Instant `[ ACTIVE (ON) / PAUSED (OFF) ]` toggle switch.
+3.  **Automated Client Rail:**
+    *   Client PWA fetches `/api/promotions/active` on app mount.
+    *   **Frequency Capping:** Dismissing the modal sets a 24-hour client cooldown (`dismissed_promo_{id}`) to prevent repeated pop-ups.
+    *   **1-Click Action Rail:** Clicking the primary CTA instantly routes the client to `/pay?amount=25000&coupon=SAVE25`, auto-fills the transfer ticket, and auto-applies the promotional discount code.
+
+---
+
 ## 5. Emergency Incident Response & Diagnostics Runbook
 
 | Scenario | Diagnostic Action | Mitigation Protocol |

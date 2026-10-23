@@ -9,6 +9,7 @@ import CoolingBanner from '../../components/CoolingBanner';
 import TransactionCard from '../../components/TransactionCard';
 import ProfileModal from '../../components/ProfileModal';
 import MonthlyStatementModal from '../../components/MonthlyStatementModal';
+import PromoBroadcastModal from '../../components/PromoBroadcastModal';
 import Link from 'next/link';
 import {
   Building2,
@@ -471,6 +472,9 @@ export default function DashboardPage() {
         isOpen={statementModalOpen}
         onClose={() => setStatementModalOpen(false)}
       />
+
+      {/* Promotional Flash Broadcast Modal */}
+      <PromoBroadcastModal />
     </div>
   );
 }

@@ -19,6 +19,7 @@ const adminRoutes = require('./routes/admin');
 const couponRoutes = require('./routes/coupons');
 const referralRoutes = require('./routes/referrals');
 const notificationRoutes = require('./routes/notifications');
+const promotionRoutes = require('./routes/promotions');
 
 // Security & Audit Middleware imports
 const { authLimiter, transactionLimiter, apiGlobalLimiter } = require('./middleware/rateLimiter');
@@ -63,7 +64,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-admin-key'],
 };
 
 app.use(cors(corsOptions));
@@ -133,6 +134,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 // Sandbox simulation endpoints (active only in non-production)
 if (process.env.NODE_ENV !== 'production') {

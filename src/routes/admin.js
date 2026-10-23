@@ -70,4 +70,16 @@ router.post('/test-gateway-ping', testGatewayPing);
  */
 router.post('/test-webhook-handshake', testWebhookHandshake);
 
+/**
+ * Promotional Broadcast Controls
+ */
+const {
+  updateBroadcastPromotion,
+  getAdminPromotions,
+} = require('../controllers/promotionController');
+
+router.get('/promotions', getAdminPromotions);
+router.put('/promotions', updateBroadcastPromotion);
+
 module.exports = router;
+

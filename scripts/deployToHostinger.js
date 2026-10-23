@@ -38,6 +38,8 @@ const FILES_TO_SYNC = [
   'src/services/gateway/cashfreeGateway.js',
   'src/services/gateway/gatewayFactory.js',
   'src/services/gateway/mockGateway.js',
+  'src/controllers/promotionController.js',
+  'src/routes/promotions.js',
   'scripts/backupLedger.js',
   'scripts/auditLiveProduction.js',
 ];
@@ -93,14 +95,18 @@ async function deploy() {
           }
 
           // Trigger Phusion Passenger App Restart
-          console.log('Triggering Phusion Passenger application restart (tmp/restart.txt)...');
           conn.exec(`mkdir -p ${REMOTE_BASE}/tmp && touch ${REMOTE_BASE}/tmp/restart.txt`, (err, stream) => {
             if (err) {
               console.warn('Restart exec error:', err.message);
+              conn.end();
+              process.exit(1);
             } else {
+              stream.on('data', () => {});
+              stream.stderr.on('data', () => {});
               stream.on('close', () => {
                 console.log('✅ Phusion Passenger restart signal dispatched.');
                 conn.end();
+                setTimeout(() => process.exit(0), 500);
               });
             }
           });

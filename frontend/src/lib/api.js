@@ -269,6 +269,19 @@ export const api = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+
+  // Promotional Broadcast Pop-Up Endpoints
+  getActivePromotion: () => request('/promotions/active'),
+
+  getAdminPromotion: (adminKey = 'fintech_admin_secret_key_2026') => request('/admin/promotions', {
+    headers: { 'x-admin-key': adminKey },
+  }),
+
+  updateAdminPromotion: (promoData, adminKey = 'fintech_admin_secret_key_2026') => request('/admin/promotions', {
+    method: 'PUT',
+    headers: { 'x-admin-key': adminKey },
+    body: JSON.stringify(promoData),
+  }),
 };
 
 

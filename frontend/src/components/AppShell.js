@@ -6,6 +6,7 @@ import BottomNav from './BottomNav';
 import DevSandboxDrawer from './DevSandboxDrawer';
 import NetworkStatusPill from './NetworkStatusPill';
 import ErrorBoundary from './ErrorBoundary';
+import PromoBroadcastModal from './PromoBroadcastModal';
 
 export default function AppShell({ children }) {
   return (
@@ -16,6 +17,7 @@ export default function AppShell({ children }) {
         <main className="flex-1 px-4 py-4">
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
+        <PromoBroadcastModal />
         <DevSandboxDrawer />
         <BottomNav />
       </div>

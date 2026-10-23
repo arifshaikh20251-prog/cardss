@@ -28,6 +28,9 @@ import {
   Cpu,
   Radio,
   HardDrive,
+  Flame,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -42,17 +45,31 @@ export default function AdminDashboardPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState(null);
   const [downloadingGst, setDownloadingGst] = useState(false);
-  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'ledger' | 'compliance' | 'diagnostics'
+  const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'ledger' | 'compliance' | 'diagnostics' | 'promotions'
   const [systemHealth, setSystemHealth] = useState(null);
   const [pingResult, setPingResult] = useState(null);
   const [pingLoading, setPingLoading] = useState(false);
   const [webhookResult, setWebhookResult] = useState(null);
   const [webhookLoading, setWebhookLoading] = useState(false);
 
+  // Broadcast Promotion Manager State
+  const [promoData, setPromoData] = useState({
+    title: '⚡ Month-End Commercial Bill Rush',
+    subtitle: 'Transfer above ₹25,000 today & save flat ₹25 on convenience fees!',
+    coupon_code: 'SAVE25',
+    badge_text: '🔥 FLASH OFFER',
+    cta_label: 'Claim Offer & Pay Now',
+    target_amount: 25000,
+    target_audience: 'ALL',
+    is_active: true,
+  });
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoSuccessMsg, setPromoSuccessMsg] = useState(false);
+
   const loadAdminData = async () => {
     try {
       setRefreshing(true);
-      const [metricsRes, txRes, healthRes] = await Promise.all([
+      const [metricsRes, txRes, healthRes, promoRes] = await Promise.all([
         api.getAdminMetrics(adminKey).catch((err) => {
           console.warn('Failed to load admin metrics:', err);
           return { metrics: null };
@@ -65,12 +82,19 @@ export default function AdminDashboardPage() {
           console.warn('Failed to load system health:', err);
           return null;
         }),
+        api.getAdminPromotion(adminKey).catch((err) => {
+          console.warn('Failed to load admin promotion:', err);
+          return null;
+        }),
       ]);
 
       setMetrics(metricsRes.metrics || null);
       setTransactions(txRes.transactions || []);
       if (healthRes && healthRes.success) {
         setSystemHealth(healthRes);
+      }
+      if (promoRes && promoRes.success && promoRes.promotion) {
+        setPromoData(promoRes.promotion);
       }
     } catch (err) {
       console.error('Admin data fetch failed:', err);
@@ -143,6 +167,31 @@ export default function AdminDashboardPage() {
     } finally {
       setWebhookLoading(false);
     }
+  };
+
+  // Handle Promotional Campaign Updates
+  const handleSavePromotion = async (customPayload) => {
+    setPromoLoading(true);
+    setPromoSuccessMsg(false);
+    try {
+      const payload = customPayload || promoData;
+      const res = await api.updateAdminPromotion(payload, adminKey);
+      if (res && res.success && res.promotion) {
+        setPromoData(res.promotion);
+        setPromoSuccessMsg(true);
+        setTimeout(() => setPromoSuccessMsg(false), 4000);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update broadcast promotion.');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleTogglePromoActive = async () => {
+    const updated = { ...promoData, is_active: !promoData.is_active };
+    setPromoData(updated);
+    await handleSavePromotion(updated);
   };
 
   const coolingTransactions = transactions.filter((t) => t.status === 'IN_COOLING');
@@ -293,8 +342,8 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* Navigation Tabs (4-Column) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+      {/* Navigation Tabs (5-Column) */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 text-xs font-semibold">
         <button
           onClick={() => setActiveTab('queue')}
           className={`py-2 rounded-xl transition ${
@@ -334,7 +383,18 @@ export default function AdminDashboardPage() {
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>System Health</span>
+          <span>Health</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('promotions')}
+          className={`py-2 rounded-xl transition flex items-center justify-center space-x-1 ${
+            activeTab === 'promotions'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5" />
+          <span>Flash Offers</span>
         </button>
       </div>
 
@@ -735,6 +795,274 @@ export default function AdminDashboardPage() {
                   Verified: <strong>{webhookResult.verified ? 'PASS' : 'FAIL'}</strong> • {webhookResult.message || webhookResult.error}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: Live Broadcast & Promo Pop-Up Manager */}
+      {activeTab === 'promotions' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                    <Flame className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                    Live Broadcast & Promo Pop-Up Manager
+                  </h3>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Instantly push CRED-grade discount modals to all active user mobile sessions.
+                </p>
+              </div>
+
+              {/* Master Toggle Switch */}
+              <div className="flex items-center space-x-3 bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 self-start sm:self-auto">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Status:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTogglePromoActive}
+                  disabled={promoLoading}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                    promoData.is_active
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${promoData.is_active ? 'bg-white animate-pulse' : 'bg-slate-400'}`} />
+                  <span>{promoData.is_active ? 'ACTIVE (ON)' : 'PAUSED (OFF)'}</span>
+                </button>
+              </div>
+            </div>
+
+            {promoSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center space-x-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span>Campaign updated! Live broadcast is synchronizing across all user devices.</span>
+              </div>
+            )}
+
+            {/* Edit Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSavePromotion();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Offer Title */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Offer Title
+                  </label>
+                  <input
+                    type="text"
+                    value={promoData.title}
+                    onChange={(e) => setPromoData({ ...promoData, title: e.target.value })}
+                    placeholder="e.g. ⚡ Month-End Commercial Bill Rush"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                </div>
+
+                {/* Badge Text */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Shimmering Badge Text
+                  </label>
+                  <input
+                    type="text"
+                    value={promoData.badge_text}
+                    onChange={(e) => setPromoData({ ...promoData, badge_text: e.target.value })}
+                    placeholder="e.g. 🔥 FLASH OFFER or LIMITED TIME"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                </div>
+
+                {/* Subtitle / Description */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Subtitle & Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={promoData.subtitle}
+                    onChange={(e) => setPromoData({ ...promoData, subtitle: e.target.value })}
+                    placeholder="e.g. Transfer above ₹25,000 today & save flat ₹25 on convenience fees!"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 resize-none"
+                    required
+                  />
+                </div>
+
+                {/* Attached Coupon Code */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Attached Coupon Code
+                  </label>
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      value={promoData.coupon_code}
+                      onChange={(e) => setPromoData({ ...promoData, coupon_code: e.target.value.toUpperCase() })}
+                      placeholder="e.g. SAVE25"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-amber-500 dark:text-amber-400 focus:outline-none focus:border-amber-500 uppercase"
+                      required
+                    />
+                    <div className="flex gap-1.5">
+                      {['SAVE10', 'SAVE25', 'SAVE50', 'REF15'].map((code) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => setPromoData({ ...promoData, coupon_code: code })}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border transition ${
+                            promoData.coupon_code === code
+                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/40'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Target Minimum Amount */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Minimum Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={promoData.target_amount || ''}
+                    onChange={(e) => setPromoData({ ...promoData, target_amount: Number(e.target.value) })}
+                    placeholder="25000"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                  <span className="text-[10px] text-slate-400">Pre-populates the `/pay` checkout sheet</span>
+                </div>
+
+                {/* CTA Button Label */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Primary CTA Button Label
+                  </label>
+                  <input
+                    type="text"
+                    value={promoData.cta_label}
+                    onChange={(e) => setPromoData({ ...promoData, cta_label: e.target.value })}
+                    placeholder="Claim Offer & Pay Now"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                </div>
+
+                {/* Target Audience */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Audience
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPromoData({ ...promoData, target_audience: 'ALL' })}
+                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition ${
+                        promoData.target_audience === 'ALL'
+                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      All Users (Global)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPromoData({ ...promoData, target_audience: 'HIGH_VOLUME' })}
+                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition ${
+                        promoData.target_audience === 'HIGH_VOLUME'
+                          ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      High-Volume (&ge; 3 Payouts)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={promoLoading}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center space-x-2 transition active:scale-95 disabled:opacity-50"
+                >
+                  {promoLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Broadcasting Updates...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Save & Broadcast to Production</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Real-Time Live Preview Mockup */}
+          <div className="rounded-2xl bg-white dark:bg-fintech-surface border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-xs text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Live User PWA Preview
+              </h4>
+              <span className="text-[10px] text-slate-400">
+                Matches active styling rendered on user devices
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 flex justify-center">
+              <div className="w-full max-w-xs rounded-2xl bg-gradient-to-b from-[#111827] via-[#0B0F19] to-[#04070D] border border-amber-500/30 p-4 shadow-xl relative overflow-hidden">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-semibold mb-2.5">
+                  <Flame className="w-3 h-3 text-amber-400 animate-pulse" />
+                  <span>{promoData.badge_text || '🔥 FLASH OFFER'}</span>
+                </div>
+
+                <h4 className="text-sm font-bold text-white mb-1">
+                  {promoData.title || 'Offer Headline'}
+                </h4>
+
+                <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
+                  {promoData.subtitle || 'Offer description text'}
+                </p>
+
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-700/60 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-xs font-bold text-amber-400 font-mono">
+                      {promoData.coupon_code || 'CODE'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                    Auto-Applies
+                  </span>
+                </div>
+
+                <div className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-xs text-center flex items-center justify-center gap-1.5 shadow">
+                  <span>{promoData.cta_label || 'Claim Offer'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
             </div>
           </div>
         </div>

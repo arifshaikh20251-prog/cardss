@@ -43,7 +43,7 @@ function PayContent() {
   const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState(
     searchParams.get('beneficiary_id') || ''
   );
-  const [amount, setAmount] = useState('15000');
+  const [amount, setAmount] = useState(searchParams.get('amount') || '15000');
   const [transferType, setTransferType] = useState('INSTANT');
   const [purpose, setPurpose] = useState(searchParams.get('purpose') || 'VENDOR_INVOICE');
   const [isPurposeOpen, setIsPurposeOpen] = useState(false);
@@ -162,6 +162,14 @@ function PayContent() {
     setCouponError('');
     setCouponSuccess('');
   };
+
+  // Auto-apply coupon from URL query param (e.g. from Promo Broadcast Modal)
+  useEffect(() => {
+    const queryCoupon = searchParams.get('coupon');
+    if (queryCoupon && numericAmount > 0) {
+      handleApplyCoupon(queryCoupon);
+    }
+  }, [searchParams]);
 
   // Re-validate coupon if amount, speed, or purpose changes
   useEffect(() => {

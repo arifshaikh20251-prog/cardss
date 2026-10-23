@@ -91,6 +91,7 @@ if (!supabase) {
           else if (tableName === 'transactions') tableItems = mockStore.transactions;
           else if (tableName === 'audit_logs') tableItems = mockStore.auditLogs;
           else if (tableName === 'notifications') tableItems = mockStore.notifications;
+          else if (tableName === 'broadcast_promotions') tableItems = mockStore.broadcastPromotions;
 
           if (operation === 'INSERT') {
             const inserted = payload.map((item) => {
@@ -99,6 +100,7 @@ if (!supabase) {
               if (tableName === 'transactions') return mockStore.createTransaction(item);
               if (tableName === 'audit_logs') return mockStore.createAuditLog(item);
               if (tableName === 'notifications') return mockStore.createNotification(item);
+              if (tableName === 'broadcast_promotions') return mockStore.updateBroadcastPromotion(item);
               return item;
             });
             const resultData = isSingle ? inserted[0] : inserted;
@@ -113,6 +115,7 @@ if (!supabase) {
               if (tableName === 'users') updated = mockStore.updateUser(idFilter.value, payload);
               if (tableName === 'transactions') updated = mockStore.updateTransaction(idFilter.value, payload);
               if (tableName === 'notifications') updated = mockStore.markNotificationAsRead(idFilter.value);
+              if (tableName === 'broadcast_promotions') updated = mockStore.updateBroadcastPromotion(payload);
               resolve({ data: isSingle ? updated : (updated ? [updated] : []), error: null });
               return;
             }
