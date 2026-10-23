@@ -15,6 +15,7 @@
     "package:hostinger": "node scripts/buildHostingerZip.js",
     "deploy:hostinger": "node scripts/deployToHostinger.js",
     "configure:gateway": "node scripts/configureGatewayCredentials.js",
+    "backup:ledger": "node scripts/backupLedger.js",
     "deploy:frontend": "cd frontend && npx vercel",
     "deploy:frontend:prod": "cd frontend && npx vercel --prod"
   },

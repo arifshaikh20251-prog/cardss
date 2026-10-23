@@ -23,8 +23,25 @@ export default function DevSandboxDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [loadingAction, setLoadingAction] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const { user, login } = useAuth();
   const router = useRouter();
+
+  React.useEffect(() => {
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev) {
+      setIsUnlocked(true);
+      return;
+    }
+    // In production, check for explicit admin key or dev unlock flag in localStorage
+    if (typeof window !== 'undefined') {
+      const adminKey = localStorage.getItem('adminKey') || localStorage.getItem('fintech_admin_key');
+      const devMode = localStorage.getItem('fintech_dev_mode') || localStorage.getItem('dev_sandbox_unlocked');
+      if (adminKey === 'fintech_admin_secret_key_2026' || devMode === 'true') {
+        setIsUnlocked(true);
+      }
+    }
+  }, []);
 
   // Fast-Forward Cooling Action
   const handleFastForward = async () => {

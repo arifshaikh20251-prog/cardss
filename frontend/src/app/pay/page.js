@@ -10,6 +10,7 @@ import MockPaymentModal from '../../components/MockPaymentModal';
 import CashfreeCheckoutModal from '../../components/CashfreeCheckoutModal';
 import PaymentModeDrawer, { DEFAULT_SAVED_CARDS, getBillDueInfo } from '../../components/PaymentModeDrawer';
 import SwipeToPay from '../../components/SwipeToPay';
+import ApiErrorCard from '../../components/ApiErrorCard';
 import {
   Zap,
   Clock,
@@ -369,10 +370,12 @@ function PayContent() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <ApiErrorCard
+          message={error}
+          onRetry={handleInitiatePayment}
+          onDismiss={() => setError('')}
+          retryLoading={initiating}
+        />
       )}
 
       {/* B. Hero Transfer Amount & Purpose Pill */}

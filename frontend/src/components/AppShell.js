@@ -5,6 +5,7 @@ import TopHeader from './TopHeader';
 import BottomNav from './BottomNav';
 import DevSandboxDrawer from './DevSandboxDrawer';
 import NetworkStatusPill from './NetworkStatusPill';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function AppShell({ children }) {
   return (
@@ -12,7 +13,9 @@ export default function AppShell({ children }) {
       <div className="w-full max-w-md min-h-screen bg-slate-50 dark:bg-fintech-dark border-x border-slate-200 dark:border-slate-800/50 flex flex-col relative pb-20 shadow-2xl transition-colors duration-200">
         <NetworkStatusPill />
         <TopHeader />
-        <main className="flex-1 px-4 py-4">{children}</main>
+        <main className="flex-1 px-4 py-4">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
         <DevSandboxDrawer />
         <BottomNav />
       </div>

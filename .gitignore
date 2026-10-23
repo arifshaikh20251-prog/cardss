@@ -21,6 +21,8 @@ hostinger-backend.zip
 *.backup.gz
 *.sql.gz
 F4xK4CtDJWjlaVLg.txt
+backups/*.json
+!backups/.gitkeep
 
 # Logs
 npm-debug.log*

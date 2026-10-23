@@ -20,10 +20,12 @@ const FILES_TO_SYNC = [
   'src/services/couponService.js',
   'src/routes/coupons.js',
   'src/app.js',
+  'src/controllers/adminController.js',
   'src/controllers/authController.js',
   'src/controllers/notificationController.js',
   'src/controllers/referralController.js',
   'src/controllers/transactionController.js',
+  'src/routes/admin.js',
   'src/routes/auth.js',
   'src/routes/notifications.js',
   'src/routes/referrals.js',
@@ -35,6 +37,7 @@ const FILES_TO_SYNC = [
   'src/services/gateway/cashfreeGateway.js',
   'src/services/gateway/gatewayFactory.js',
   'src/services/gateway/mockGateway.js',
+  'scripts/backupLedger.js',
 ];
 
 async function deploy() {

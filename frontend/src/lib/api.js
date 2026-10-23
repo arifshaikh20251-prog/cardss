@@ -238,6 +238,20 @@ export const api = {
     headers: { 'x-admin-key': adminKey },
   }),
 
+  getSystemHealth: (adminKey = 'fintech_admin_secret_key_2026') => request('/admin/system-health', {
+    headers: { 'x-admin-key': adminKey },
+  }),
+
+  testGatewayPing: (adminKey = 'fintech_admin_secret_key_2026') => request('/admin/test-gateway-ping', {
+    method: 'POST',
+    headers: { 'x-admin-key': adminKey },
+  }),
+
+  testWebhookHandshake: (adminKey = 'fintech_admin_secret_key_2026') => request('/admin/test-webhook-handshake', {
+    method: 'POST',
+    headers: { 'x-admin-key': adminKey },
+  }),
+
   downloadGstReport: async (month = '', adminKey = 'fintech_admin_secret_key_2026') => {
     const query = month ? `?month=${month}&format=csv` : '?format=csv';
     const blob = await request(`/admin/export-gst-report${query}`, {

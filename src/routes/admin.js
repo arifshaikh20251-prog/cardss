@@ -11,6 +11,9 @@ const {
   getAdminTransactions,
   overrideCooling,
   exportGstReport,
+  getSystemHealth,
+  testGatewayPing,
+  testWebhookHandshake,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -45,5 +48,26 @@ router.post('/transactions/:id/override-cooling', overrideCooling);
  * @access  Admin
  */
 router.get('/export-gst-report', exportGstReport);
+
+/**
+ * @route   GET /api/admin/system-health
+ * @desc    Get live operational infrastructure metrics, memory, DB latency, gateway mode
+ * @access  Admin
+ */
+router.get('/system-health', getSystemHealth);
+
+/**
+ * @route   POST /api/admin/test-gateway-ping
+ * @desc    Diagnostic test ping for remote payment gateway
+ * @access  Admin
+ */
+router.post('/test-gateway-ping', testGatewayPing);
+
+/**
+ * @route   POST /api/admin/test-webhook-handshake
+ * @desc    Diagnostic verification for HMAC-SHA256 signature handshake
+ * @access  Admin
+ */
+router.post('/test-webhook-handshake', testWebhookHandshake);
 
 module.exports = router;
