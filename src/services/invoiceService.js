@@ -450,7 +450,7 @@ function generateCommercialVoucherPdf(transaction, user = {}, beneficiary = {}) 
 
       const primaryColor = '#0F172A'; // Slate 900
       const accentColor = '#059669';  // Emerald 600
-      const navyColor = '#1E3A8A';    // Deep Navy
+      const navyColor = '#0F172A';    // Deep Navy
       const mutedColor = '#64748B';   // Slate 500
       const lightBg = '#F8FAFC';      // Slate 50
       const borderColor = '#CBD5E1';  // Slate 300
@@ -474,46 +474,97 @@ function generateCommercialVoucherPdf(transaction, user = {}, beneficiary = {}) 
       const purpose = (transaction.purpose || 'VENDOR_PAYMENT').replace(/_/g, ' ');
 
       // -----------------------------------------------------------------------
-      // 1. Header Banner
+      // 0. Outer Certificate Border (Bank-Grade Security Certificate Look)
       // -----------------------------------------------------------------------
       doc
-        .rect(40, 40, 515, 68)
+        .rect(26, 26, 543, 790)
+        .lineWidth(1)
+        .strokeColor('#CBD5E1')
+        .stroke();
+
+      doc
+        .rect(30, 30, 535, 782)
+        .lineWidth(0.5)
+        .strokeColor('#E2E8F0')
+        .stroke();
+
+      // -----------------------------------------------------------------------
+      // 1. Header Banner (Isolated Layout: Title Left, Badge Right)
+      // -----------------------------------------------------------------------
+      const bannerY = 38;
+      const bannerHeight = 68;
+      doc
+        .rect(38, bannerY, 519, bannerHeight)
         .fill(navyColor);
 
+      // Left Title Block (Max-width constrained to 355 to guarantee zero overlap)
       doc
         .fillColor('#FFFFFF')
-        .fontSize(14)
+        .fontSize(12)
         .font('Helvetica-Bold')
-        .text('COMMERCIAL PAYMENT DECLARATION & SETTLEMENT VOUCHER', 55, 50, { width: 490 });
+        .text('COMMERCIAL PAYMENT DECLARATION & SETTLEMENT VOUCHER', 50, bannerY + 11, {
+          width: 355,
+          lineGap: 1.5,
+        });
 
       doc
-        .fillColor('#93C5FD')
-        .fontSize(8.5)
+        .fillColor('#94A3B8')
+        .fontSize(7.5)
         .font('Helvetica')
-        .text('Statutory B2B Utility & Commercial Payout Certificate | IT Act 2000 Section 65B Compliant', 55, 70)
-        .text('Issued by B2B UtilityPay Intermediary Platform on behalf of Verified Payer', 55, 83);
+        .text('Statutory B2B Utility & Commercial Payout Certificate | IT Act 2000 Section 65B Compliant', 50, bannerY + 39, {
+          width: 355,
+        })
+        .text('Issued by B2B UtilityPay Intermediary Platform on behalf of Verified Remitter', 50, bannerY + 50, {
+          width: 355,
+        });
+
+      // Right Audit Safe Badge Container (Isolated in dedicated box with gold border)
+      const badgeX = 415;
+      const badgeY = bannerY + 9;
+      const badgeW = 132;
+      const badgeH = 50;
+
+      doc
+        .roundedRect(badgeX, badgeY, badgeW, badgeH, 5)
+        .fill('#1E293B')
+        .lineWidth(1)
+        .strokeColor('#F59E0B')
+        .stroke();
 
       doc
         .fillColor('#FCD34D')
-        .fontSize(9)
+        .fontSize(8.5)
         .font('Helvetica-Bold')
-        .text('RBI AUDIT SAFE', 430, 52, { align: 'right', width: 110 });
+        .text('RBI AUDIT SAFE', badgeX, badgeY + 8, { align: 'center', width: badgeW });
+
+      doc
+        .fillColor('#38BDF8')
+        .fontSize(7)
+        .font('Helvetica-Bold')
+        .text('100% ESCROW SETTLED', badgeX, badgeY + 21, { align: 'center', width: badgeW });
+
+      doc
+        .fillColor('#94A3B8')
+        .fontSize(6.5)
+        .font('Helvetica')
+        .text('CERTIFIED TRANSACTION', badgeX, badgeY + 33, { align: 'center', width: badgeW });
 
       // -----------------------------------------------------------------------
       // 2. Voucher Meta Bar
       // -----------------------------------------------------------------------
-      let y = 120;
+      let y = 113;
       doc
-        .rect(40, y, 515, 26)
+        .rect(38, y, 519, 22)
         .fill(lightBg)
         .strokeColor(borderColor)
+        .lineWidth(0.75)
         .stroke();
 
       doc
         .fillColor(primaryColor)
-        .fontSize(8.5)
+        .fontSize(8)
         .font('Helvetica-Bold')
-        .text('Voucher Ref: ', 55, y + 8, { continued: true })
+        .text('Voucher Ref: ', 48, y + 6, { continued: true })
         .font('Helvetica')
         .text(voucherNumber, { continued: true })
         .text('   |   ', { continued: true })
@@ -530,108 +581,110 @@ function generateCommercialVoucherPdf(transaction, user = {}, beneficiary = {}) 
       // -----------------------------------------------------------------------
       // 3. Parties Info (Two-Column Layout)
       // -----------------------------------------------------------------------
-      y = 158;
-      const cardWidth = 250;
-      const cardHeight = 100;
+      y = 142;
+      const cardWidth = 254;
+      const cardHeight = 92;
 
       // Payer Entity Card (Left)
       doc
-        .rect(40, y, cardWidth, cardHeight)
+        .rect(38, y, cardWidth, cardHeight)
         .fill('#FFFFFF')
         .strokeColor(borderColor)
+        .lineWidth(0.75)
         .stroke();
 
       doc
-        .rect(40, y, cardWidth, 20)
-        .fill('#EFF6FF');
+        .rect(38, y, cardWidth, 18)
+        .fill('#F1F5F9');
 
       doc
         .fillColor(navyColor)
-        .fontSize(8.5)
+        .fontSize(8)
         .font('Helvetica-Bold')
-        .text('1. REMITTER (COMMERCIAL PAYER)', 50, y + 5);
+        .text('1. REMITTER (COMMERCIAL PAYER)', 48, y + 5);
 
       doc
         .fillColor(primaryColor)
-        .fontSize(8)
+        .fontSize(7.5)
         .font('Helvetica-Bold')
-        .text('Payer Name: ', 50, y + 26, { continued: true })
+        .text('Payer Name: ', 48, y + 24, { continued: true })
         .font('Helvetica')
         .text(user.full_name || 'Verified Corporate Enterprise')
         .font('Helvetica-Bold')
-        .text('Registered Mobile: ', 50, y + 40, { continued: true })
+        .text('Registered Mobile: ', 48, y + 37, { continued: true })
         .font('Helvetica')
         .text(maskMobile(user.mobile))
         .font('Helvetica-Bold')
-        .text('PAN Number: ', 50, y + 54, { continued: true })
+        .text('PAN Number: ', 48, y + 50, { continued: true })
         .font('Helvetica')
         .text(maskPAN(user.pan_number))
         .font('Helvetica-Bold')
-        .text('KYC Verification: ', 50, y + 68, { continued: true })
+        .text('KYC Verification: ', 48, y + 63, { continued: true })
         .font('Helvetica')
         .text(user.kyc_status ? `${user.kyc_status} (UIDAI & NSDL Cleared)` : 'VERIFIED')
         .font('Helvetica-Bold')
-        .text('Payment Mode: ', 50, y + 82, { continued: true })
+        .text('Payment Mode: ', 48, y + 76, { continued: true })
         .font('Helvetica')
         .text('Commercial Credit Card Remittance');
 
       // Payee Entity Card (Right)
-      const rightX = 305;
+      const rightX = 303;
       doc
         .rect(rightX, y, cardWidth, cardHeight)
         .fill('#FFFFFF')
         .strokeColor(borderColor)
+        .lineWidth(0.75)
         .stroke();
 
       doc
-        .rect(rightX, y, cardWidth, 20)
+        .rect(rightX, y, cardWidth, 18)
         .fill('#ECFDF5');
 
       doc
         .fillColor(accentColor)
-        .fontSize(8.5)
+        .fontSize(8)
         .font('Helvetica-Bold')
         .text('2. DESIGNATED PAYEE (BENEFICIARY)', rightX + 10, y + 5);
 
       doc
         .fillColor(primaryColor)
-        .fontSize(8)
+        .fontSize(7.5)
         .font('Helvetica-Bold')
-        .text('Payee Name: ', rightX + 10, y + 26, { continued: true })
+        .text('Payee Name: ', rightX + 10, y + 24, { continued: true })
         .font('Helvetica')
         .text(beneficiary.account_holder_name || 'Designated Commercial Landlord / Vendor')
         .font('Helvetica-Bold')
-        .text('Bank & Account: ', rightX + 10, y + 40, { continued: true })
+        .text('Bank & Account: ', rightX + 10, y + 37, { continued: true })
         .font('Helvetica')
         .text(`${beneficiary.bank_name || 'Settlement Bank'} (${maskAccount(beneficiary.account_number)})`)
         .font('Helvetica-Bold')
-        .text('IFSC Code: ', rightX + 10, y + 54, { continued: true })
+        .text('IFSC Code: ', rightX + 10, y + 50, { continued: true })
         .font('Helvetica')
         .text(beneficiary.ifsc_code || 'HDFC0000128')
         .font('Helvetica-Bold')
-        .text('Beneficiary Type: ', rightX + 10, y + 68, { continued: true })
+        .text('Beneficiary Type: ', rightX + 10, y + 63, { continued: true })
         .font('Helvetica')
         .text(beneficiary.beneficiary_type || 'COMMERCIAL_VENDOR')
         .font('Helvetica-Bold')
-        .text('Purpose of Payout: ', rightX + 10, y + 82, { continued: true })
+        .text('Purpose of Payout: ', rightX + 10, y + 76, { continued: true })
         .font('Helvetica')
         .text(purpose);
 
       // -----------------------------------------------------------------------
       // 4. Commercial Settlement Particulars Table
       // -----------------------------------------------------------------------
-      y = 270;
+      y = 241;
       doc
-        .rect(40, y, 515, 20)
+        .rect(38, y, 519, 18)
         .fill(primaryColor);
 
       doc
         .fillColor('#FFFFFF')
-        .fontSize(8.5)
+        .fontSize(8)
         .font('Helvetica-Bold')
-        .text('Settlement Particulars', 50, y + 6)
-        .text('Audit Parameter', 270, y + 6)
-        .text('Settled Value (INR)', 430, y + 6, { align: 'right', width: 115 });
+        .text('Settlement Particulars', 48, y + 5)
+        .text('Audit Parameter', 260, y + 5)
+        .text('Settled Value (INR)', 430, y + 5, { align: 'right', width: 117 });
 
       const voucherRows = [
         {
@@ -674,90 +727,222 @@ function generateCommercialVoucherPdf(transaction, user = {}, beneficiary = {}) 
         },
       ];
 
-      y += 20;
+      y += 18;
       voucherRows.forEach((row, i) => {
-        const rowHeight = 22;
+        const rowHeight = 20;
         const bg = row.highlight ? '#F0FDF4' : (i % 2 === 0 ? '#FFFFFF' : lightBg);
 
         doc
-          .rect(40, y, 515, rowHeight)
+          .rect(38, y, 519, rowHeight)
           .fill(bg)
           .strokeColor(borderColor)
+          .lineWidth(0.5)
           .stroke();
 
         doc
           .fillColor(row.color || (row.highlight ? '#15803D' : primaryColor))
-          .fontSize(8)
+          .fontSize(7.5)
           .font(row.bold ? 'Helvetica-Bold' : 'Helvetica')
-          .text(row.item, 50, y + 6, { width: 210 })
-          .text(row.param, 270, y + 6, { width: 160 })
-          .text(row.value, 430, y + 6, { align: 'right', width: 115 });
+          .text(row.item, 48, y + 5, { width: 205 })
+          .text(row.param, 260, y + 5, { width: 165 })
+          .text(row.value, 430, y + 5, { align: 'right', width: 117 });
 
         y += rowHeight;
       });
 
       // -----------------------------------------------------------------------
-      // 5. Statutory RBI Compliance Declaration Box
+      // 5. Statutory RBI Compliance Declaration Box (Auto-Flow Dynamic Y Layout!)
       // -----------------------------------------------------------------------
-      y += 15;
+      y += 12;
+      const declBoxStartY = y;
+      const declHeaderH = 18;
+
+      // Header strip for Declaration box
       doc
-        .rect(40, y, 515, 140)
-        .fill('#F8FAFC')
+        .rect(38, y, 519, declHeaderH)
+        .fill('#1E293B');
+
+      doc
+        .fillColor('#F8FAFC')
+        .fontSize(8)
+        .font('Helvetica-Bold')
+        .text('RBI FINTECH INTERMEDIARY & PMLA STATUTORY COMPLIANCE DECLARATION', 48, y + 5);
+
+      // Natural Auto-Flow for Legal Clauses
+      doc.y = y + declHeaderH + 8;
+      doc.x = 48;
+
+      // Clause 1
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7.2)
+        .fillColor('#0F172A')
+        .text('1. DECLARATION OF COMMERCIAL PURPOSE: ', { continued: true, width: 499, align: 'justify', lineGap: 2.5 })
+        .font('Helvetica')
+        .fillColor('#334155')
+        .text(
+          'The remitter hereby solemnly affirms that this transfer is made exclusively in satisfaction of genuine commercial liabilities, vendor purchase considerations, or commercial rent obligations.',
+          { width: 499, align: 'justify', lineGap: 2.5 }
+        );
+      doc.moveDown(0.6);
+
+      // Clause 2
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7.2)
+        .fillColor('#0F172A')
+        .text('2. PROHIBITION OF CASH ADVANCES & SELF-CYCLING: ', { continued: true, width: 499, align: 'justify', lineGap: 2.5 })
+        .font('Helvetica')
+        .fillColor('#334155')
+        .text(
+          'In adherence with RBI Master Directions on Credit Card Transactions and Prevention of Money Laundering Act (PMLA) 2002, the remitter confirms that this transaction DOES NOT constitute a cash advance, revolving personal loan, or round-tripping of funds.',
+          { width: 499, align: 'justify', lineGap: 2.5 }
+        );
+      doc.moveDown(0.6);
+
+      // Clause 3
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7.2)
+        .fillColor('#0F172A')
+        .text('3. BANK-GRADE AUDIT RECORD: ', { continued: true, width: 499, align: 'justify', lineGap: 2.5 })
+        .font('Helvetica')
+        .fillColor('#334155')
+        .text(
+          'In accordance with Indian IT Act 2000 (Section 65B), this digitally generated voucher serves as legal settlement evidence for Income Tax TDS compliance, Chartered Accountant auditing, and Goods & Services Tax documentation in absence of a physical invoice.',
+          { width: 499, align: 'justify', lineGap: 2.5 }
+        );
+      doc.moveDown(0.6);
+
+      // Clause 4
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(7.2)
+        .fillColor('#0F172A')
+        .text('4. DIGITAL TIMING & ESCROW RECONCILIATION: ', { continued: true, width: 499, align: 'justify', lineGap: 2.5 })
+        .font('Helvetica')
+        .fillColor('#334155')
+        .text(
+          'Payout settled through regulated escrow nodal accounts directly into the validated bank account of the designated commercial recipient with automated ledger reconciliation.',
+          { width: 499, align: 'justify', lineGap: 2.5 }
+        );
+
+      // Calculate rendered height of declaration box and draw outer border
+      const declBottomY = doc.y + 6;
+      const declTotalH = declBottomY - declBoxStartY;
+
+      doc
+        .rect(38, declBoxStartY, 519, declTotalH)
         .strokeColor('#94A3B8')
+        .lineWidth(0.75)
+        .stroke();
+
+      // -----------------------------------------------------------------------
+      // 6. Bottom Certification: Auditor Note (Left) & Official Seal (Right)
+      // -----------------------------------------------------------------------
+      const bottomY = declBottomY + 12;
+
+      // Left Box: Auditor Note
+      const noteW = 280;
+      const noteH = 78;
+      doc
+        .rect(38, bottomY, noteW, noteH)
+        .fill(lightBg)
+        .strokeColor(borderColor)
+        .lineWidth(0.75)
         .stroke();
 
       doc
         .fillColor(navyColor)
-        .fontSize(9)
+        .fontSize(7.5)
         .font('Helvetica-Bold')
-        .text('RBI FINTECH INTERMEDIARY & PMLA STATUTORY COMPLIANCE DECLARATION', 50, y + 10);
+        .text('AUDITOR & STATUTORY VERIFICATION NOTICE', 48, bottomY + 7);
 
       doc
-        .fillColor(primaryColor)
-        .fontSize(7.5)
+        .fillColor('#475569')
+        .fontSize(6.8)
         .font('Helvetica')
         .text(
-          '1. DECLARATION OF COMMERCIAL PURPOSE: The remitter hereby solemnly affirms that this transfer is made exclusively in satisfaction of genuine commercial liabilities, vendor purchase considerations, or commercial rent obligations.',
-          50,
-          y + 28,
-          { width: 495, lineGap: 1.5 }
-        )
-        .text(
-          '2. PROHIBITION OF CASH ADVANCES & SELF-CYCLING: In adherence with RBI Master Directions on Credit Card Transactions and Prevention of Money Laundering Act (PMLA) 2002, the remitter confirms that this transaction DOES NOT constitute a cash advance, revolving personal loan, or round-tripping of funds.',
-          50,
-          y + 52,
-          { width: 495, lineGap: 1.5 }
-        )
-        .text(
-          '3. BANK-GRADE AUDIT RECORD: In accordance with Indian IT Act 2000 (Section 65B), this digitally generated voucher serves as legal settlement evidence for Income Tax TDS compliance, Chartered Accountant auditing, and Goods & Services Tax documentation in absence of a physical invoice.',
-          50,
-          y + 76,
-          { width: 495, lineGap: 1.5 }
-        )
-        .text(
-          '4. DIGITAL TIMING & ESCROW RECONCILIATION: Payout settled through regulated escrow nodal accounts directly into the validated bank account of the designated commercial recipient.',
-          50,
-          y + 100,
-          { width: 495, lineGap: 1.5 }
+          'This voucher is an electronically generated legal settlement certificate pursuant to Section 65B of the Information Technology Act, 2000. Statutory auditors and tax practitioners can verify settlement authenticity against Core Banking System UTR records.',
+          48,
+          bottomY + 22,
+          { width: 260, lineGap: 1.5, align: 'justify' }
         );
 
       doc
-        .fillColor('#059669')
-        .fontSize(8)
+        .fillColor(accentColor)
+        .fontSize(7)
         .font('Helvetica-Bold')
-        .text('✓ DIGITALLY CERTIFIED & ATTACHED TO TRANSACTION AUDIT TRAIL', 50, y + 124);
+        .text('✓ Authenticated by B2B UtilityPay Compliance Engine', 48, bottomY + 62);
+
+      // Right Box: Official Green Verified Digital Seal Stamp Box
+      const sealX = 328;
+      const sealW = 229;
+      const sealH = noteH;
+
+      doc
+        .roundedRect(sealX, bottomY, sealW, sealH, 6)
+        .fill('#ECFDF5')
+        .lineWidth(1.2)
+        .strokeColor('#059669')
+        .stroke();
+
+      // Subtle inner dotted seal border
+      doc
+        .roundedRect(sealX + 3, bottomY + 3, sealW - 6, sealH - 6, 4)
+        .lineWidth(0.5)
+        .strokeColor('#10B981')
+        .dash(3, { space: 2 })
+        .stroke()
+        .undash();
+
+      doc
+        .fillColor('#047857')
+        .fontSize(7.8)
+        .font('Helvetica-Bold')
+        .text('★ DIGITALLY SIGNED & ESCROW CERTIFIED ★', sealX, bottomY + 8, {
+          align: 'center',
+          width: sealW,
+        });
+
+      doc
+        .fillColor('#065F46')
+        .fontSize(6.8)
+        .font('Helvetica-Bold')
+        .text('SECTION 65B INDIAN IT ACT 2000 COMPLIANT', sealX, bottomY + 21, {
+          align: 'center',
+          width: sealW,
+        });
+
+      doc
+        .fillColor('#047857')
+        .fontSize(6.5)
+        .font('Helvetica')
+        .text(`Certificate Ref: ESCROW-${voucherIdPrefix}`, sealX, bottomY + 35, {
+          align: 'center',
+          width: sealW,
+        })
+        .text(`Date & Time: ${voucherDate} ${voucherTime}`, sealX, bottomY + 46, {
+          align: 'center',
+          width: sealW,
+        })
+        .font('Helvetica-Bold')
+        .text('Cryptographic Tamper-Evident Settlement Stamp', sealX, bottomY + 59, {
+          align: 'center',
+          width: sealW,
+        });
 
       // -----------------------------------------------------------------------
-      // 6. Footer Digital Stamp
+      // 7. Single-Page A4 Footer
       // -----------------------------------------------------------------------
       doc
         .fillColor(mutedColor)
-        .fontSize(7)
+        .fontSize(6.5)
         .text(
           'B2B UtilityPay Network Platform | RBI Regulated Fintech Escrow Infrastructure | Page 1 of 1',
-          40,
-          780,
-          { align: 'center', width: 515 }
+          38,
+          788,
+          { align: 'center', width: 519 }
         );
 
       doc.end();
