@@ -9,6 +9,15 @@ function generateUuid() {
   return crypto.randomUUID ? crypto.randomUUID() : `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
+function generateReferralCode() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let suffix = '';
+  for (let i = 0; i < 3; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `PAY${suffix}`;
+}
+
 class MockStore {
   constructor() {
     this.reset();
@@ -23,6 +32,7 @@ class MockStore {
         pan_number: 'AAACA1234F',
         kyc_status: 'VERIFIED',
         is_cooling_cleared: true,
+        referral_code: 'PAY987',
         created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       },
@@ -33,6 +43,7 @@ class MockStore {
         pan_number: 'BAPPR5678K',
         kyc_status: 'PENDING',
         is_cooling_cleared: false,
+        referral_code: 'PAY123',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -59,6 +70,8 @@ class MockStore {
 
     this.transactions = [];
     this.auditLogs = [];
+    this.referrals = [];
+    this.userCoupons = [];
   }
 
   // --- Users Operations ---
@@ -71,7 +84,22 @@ class MockStore {
     return this.users.find((u) => u.mobile.replace(/\D/g, '') === cleaned) || null;
   }
 
+  findUserByReferralCode(code) {
+    if (!code) return null;
+    const clean = String(code).trim().toUpperCase();
+    return this.users.find((u) => u.referral_code && u.referral_code.toUpperCase() === clean) || null;
+  }
+
   createUser(userData) {
+    let referralCode = userData.referral_code;
+    if (!referralCode) {
+      let attempts = 0;
+      do {
+        referralCode = generateReferralCode();
+        attempts++;
+      } while (this.findUserByReferralCode(referralCode) && attempts < 10);
+    }
+
     const user = {
       id: userData.id || generateUuid(),
       mobile: userData.mobile,
@@ -79,6 +107,7 @@ class MockStore {
       pan_number: userData.pan_number ? userData.pan_number.toUpperCase() : null,
       kyc_status: userData.kyc_status || 'PENDING',
       is_cooling_cleared: userData.is_cooling_cleared !== undefined ? userData.is_cooling_cleared : false,
+      referral_code: referralCode,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -91,6 +120,60 @@ class MockStore {
     if (!user) return null;
     Object.assign(user, updates, { updated_at: new Date().toISOString() });
     return user;
+  }
+
+  // --- Referrals Operations ---
+  createReferral(data) {
+    const ref = {
+      id: data.id || generateUuid(),
+      referrer_id: data.referrer_id,
+      referee_id: data.referee_id,
+      referral_code: data.referral_code.toUpperCase(),
+      discount_code: data.discount_code || 'REF15',
+      discount_amount: parseFloat(data.discount_amount || 15),
+      status: data.status || 'APPLIED', // 'APPLIED' | 'REWARDED'
+      created_at: new Date().toISOString(),
+      rewarded_at: data.rewarded_at || null,
+    };
+    this.referrals.push(ref);
+    return ref;
+  }
+
+  findReferralByRefereeId(refereeId) {
+    return this.referrals.find((r) => r.referee_id === refereeId) || null;
+  }
+
+  getReferralsByReferrerId(referrerId) {
+    return this.referrals.filter((r) => r.referrer_id === referrerId);
+  }
+
+  updateReferral(id, updates) {
+    const ref = this.referrals.find((r) => r.id === id);
+    if (!ref) return null;
+    Object.assign(ref, updates);
+    return ref;
+  }
+
+  // --- User-Specific Issued Coupons ---
+  issueUserCoupon(couponData) {
+    const coupon = {
+      id: couponData.id || generateUuid(),
+      user_id: couponData.user_id,
+      code: couponData.code.toUpperCase(),
+      type: couponData.type || 'FLAT',
+      value: parseFloat(couponData.value || 25),
+      minAmount: parseFloat(couponData.minAmount || 5000),
+      description: couponData.description || '₹25 Referral Reward Discount',
+      badge: couponData.badge || 'Referral ₹25 OFF',
+      status: 'ACTIVE',
+      created_at: new Date().toISOString(),
+    };
+    this.userCoupons.push(coupon);
+    return coupon;
+  }
+
+  getUserCoupons(userId) {
+    return this.userCoupons.filter((c) => c.user_id === userId);
   }
 
   // --- Beneficiaries Operations ---
@@ -209,4 +292,5 @@ const mockStore = new MockStore();
 module.exports = {
   mockStore,
   generateUuid,
+  generateReferralCode,
 };

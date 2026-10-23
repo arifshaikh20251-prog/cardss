@@ -39,6 +39,24 @@ async function processCoolingReleases(asOfDate = new Date()) {
         // Clear cooling flag for the user on first successful release
         const user = mockStore.updateUser(tx.user_id, { is_cooling_cleared: true });
 
+        // Trigger referral reward if this was a referred user's first payout
+        const referral = mockStore.findReferralByRefereeId(tx.user_id);
+        if (referral && referral.status === 'APPLIED') {
+          mockStore.updateReferral(referral.id, {
+            status: 'REWARDED',
+            rewarded_at: new Date().toISOString(),
+            first_transaction_id: updated.id,
+          });
+          mockStore.issueUserCoupon({
+            user_id: referral.referrer_id,
+            code: 'REF25',
+            value: 25,
+            minAmount: 5000,
+            description: 'Referral Reward: ₹25 discount coupon earned from friend referral',
+            badge: 'Referral ₹25 OFF',
+          });
+        }
+
         // Dispatch settlement notification alert
         notificationService
           .sendPayoutSettledAlert({ user: user || { id: tx.user_id }, transaction: updated, utr: utrNumber })

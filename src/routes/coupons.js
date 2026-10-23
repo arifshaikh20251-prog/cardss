@@ -13,10 +13,40 @@ const couponService = require('../services/couponService');
  */
 router.get('/', (req, res) => {
   const coupons = couponService.getActiveCoupons();
+  const { amount, transferType, purpose } = req.query;
+
+  let bestEligible = null;
+  if (amount && parseFloat(amount) > 0) {
+    bestEligible = couponService.getHighestEligibleCoupon({
+      amount: parseFloat(amount),
+      transferType: transferType || 'STANDARD',
+      purpose: purpose || '',
+    });
+  }
+
   res.json({
     success: true,
     count: coupons.length,
     coupons,
+    best_eligible: bestEligible,
+  });
+});
+
+/**
+ * GET /api/coupons/best-eligible
+ * Returns highest eligible coupon for given amount
+ */
+router.get('/best-eligible', (req, res) => {
+  const { amount, transferType, purpose } = req.query;
+  const bestEligible = couponService.getHighestEligibleCoupon({
+    amount: parseFloat(amount || 0),
+    transferType: transferType || 'STANDARD',
+    purpose: purpose || '',
+  });
+
+  res.json({
+    success: true,
+    best_eligible: bestEligible,
   });
 });
 

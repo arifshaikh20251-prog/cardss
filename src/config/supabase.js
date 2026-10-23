@@ -9,7 +9,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
-const { mockStore } = require('./mockStore');
+const { mockStore, generateReferralCode } = require('./mockStore');
 
 dotenv.config();
 
@@ -179,5 +179,6 @@ module.exports = {
   supabaseAdmin,
   mockStore,
   isMockMode,
+  generateReferralCode,
   checkDatabaseConnection,
 };

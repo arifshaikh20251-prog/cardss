@@ -14,7 +14,11 @@ const {
   MAX_SINGLE_TICKET_AMOUNT,
 } = require('../utils/riskRules');
 const { mockStore, isMockMode, supabase } = require('../config/supabase');
-const { generateInvoicePdf, maskAccount } = require('../services/invoiceService');
+const {
+  generateInvoicePdf,
+  generateCommercialVoucherPdf,
+  maskAccount,
+} = require('../services/invoiceService');
 const gatewayFactory = require('../services/gateway/gatewayFactory');
 const payoutFactory = require('../services/payout/payoutFactory');
 const notificationService = require('../services/notificationService');
@@ -53,10 +57,61 @@ function getCoolingCountdown(coolingReleaseAt) {
 }
 
 /**
+ * Trigger Referrer Reward upon successful referee payout
+ * Issues ₹25 discount coupon to referrer's account
+ */
+async function triggerReferralRewardIfEligible(userId, transaction) {
+  try {
+    if (isMockMode || supabase.isMock) {
+      const referral = mockStore.findReferralByRefereeId(userId);
+      if (referral && referral.status === 'APPLIED') {
+        mockStore.updateReferral(referral.id, {
+          status: 'REWARDED',
+          rewarded_at: new Date().toISOString(),
+          first_transaction_id: transaction.id,
+        });
+
+        // Issue ₹25 discount coupon to referrer
+        mockStore.issueUserCoupon({
+          user_id: referral.referrer_id,
+          code: 'REF25',
+          value: 25,
+          minAmount: 5000,
+          description: 'Referral Reward: ₹25 discount coupon earned from friend referral',
+          badge: 'Referral ₹25 OFF',
+        });
+        console.log(`[REFERRAL_REWARD] Issued ₹25 reward coupon to referrer ${referral.referrer_id}`);
+      }
+    } else {
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('*')
+        .eq('referee_id', userId)
+        .eq('status', 'APPLIED')
+        .maybeSingle();
+
+      if (referral) {
+        await supabase
+          .from('referrals')
+          .update({
+            status: 'REWARDED',
+            rewarded_at: new Date().toISOString(),
+          })
+          .eq('id', referral.id);
+      }
+    }
+  } catch (err) {
+    console.warn('[REFERRAL_REWARD_WARN] Non-blocking referral reward error:', err.message);
+  }
+}
+
+/**
  * Format transaction record with standardized response fields
  */
 function formatTransactionItem(tx, beneficiary) {
   const coolingInfo = getCoolingCountdown(tx.cooling_release_at);
+  const hasExternalInvoice = tx.has_external_invoice === true;
+  const voucherStatus = tx.voucher_status || (!hasExternalInvoice ? 'AUTO_GENERATED' : null);
 
   return {
     id: tx.id,
@@ -94,7 +149,12 @@ function formatTransactionItem(tx, beneficiary) {
     cooling_message: coolingInfo.cooling_message,
     coupon_code: tx.coupon_code || null,
     discount_amount: parseFloat(tx.discount_amount || 0),
+    has_external_invoice: hasExternalInvoice,
+    invoice_name: tx.invoice_name || null,
+    voucher_status: voucherStatus,
+    voucher_name: tx.voucher_name || (!hasExternalInvoice ? 'Commercial Payment Declaration & Settlement Voucher' : null),
     invoice_url: `/api/transactions/${tx.id}/invoice`,
+    voucher_url: `/api/transactions/${tx.id}/voucher`,
   };
 }
 
@@ -215,7 +275,13 @@ async function initiateTransaction(req, res, next) {
       };
     }
 
-    // 6. Create Transaction with status 'INITIATED'
+    // 6. Evaluate Invoice Attachment & Auto-Generated Commercial Voucher
+    const hasExternalInvoice = Boolean(req.body.invoice_name || req.body.invoice_url);
+    const invoiceName = req.body.invoice_name || null;
+    const voucherStatus = hasExternalInvoice ? null : 'AUTO_GENERATED';
+    const voucherName = hasExternalInvoice ? null : 'Commercial Payment Declaration & Settlement Voucher';
+
+    // 7. Create Transaction with status 'INITIATED'
     const transactionRecord = {
       user_id: user.id,
       beneficiary_id: beneficiary.id,
@@ -227,6 +293,10 @@ async function initiateTransaction(req, res, next) {
       total_debited: feeBreakdown.totalPayable,
       coupon_code: appliedCoupon ? appliedCoupon.code : null,
       discount_amount: appliedCoupon ? appliedCoupon.discountAmount : 0,
+      has_external_invoice: hasExternalInvoice,
+      invoice_name: invoiceName,
+      voucher_status: voucherStatus,
+      voucher_name: voucherName,
       status: 'INITIATED',
       payout_status: 'INITIATED',
       gateway_order_id: `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
@@ -483,6 +553,7 @@ async function handlePgWebhook(req, res, next) {
             notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
           ]);
         } else if (updatedStatus === 'PAYOUT_SUCCESS') {
+          await triggerReferralRewardIfEligible(transaction.user_id, updatedTransaction);
           await Promise.allSettled([
             notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
             notificationService.sendPayoutSettledAlert({ user, transaction: updatedTransaction, utr: utrNumber }),
@@ -650,6 +721,7 @@ async function mockPgWebhook(req, res, next) {
           notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
         ]);
       } else if (updatedStatus === 'PAYOUT_SUCCESS') {
+        await triggerReferralRewardIfEligible(transaction.user_id, updatedTransaction);
         await Promise.allSettled([
           notificationService.sendPaymentSuccessAlert({ user, transaction: updatedTransaction, beneficiary: beneficiary || {}, pdfBuffer }),
           notificationService.sendPayoutSettledAlert({ user, transaction: updatedTransaction, utr: utrNumber }),
@@ -991,6 +1063,57 @@ async function getTransactionAnalytics(req, res, next) {
   }
 }
 
+/**
+ * Download Commercial Payment Declaration & Settlement Voucher PDF
+ * GET /api/transactions/:id/voucher
+ */
+async function downloadCommercialVoucherPdf(req, res, next) {
+  try {
+    const user = req.user;
+    const { id } = req.params;
+
+    let transaction = null;
+    if (isMockMode || supabase.isMock) {
+      transaction = mockStore.findTransactionById(id);
+    } else {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!error && data) transaction = data;
+    }
+
+    if (!transaction || transaction.user_id !== user.id) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: 'Transaction not found or unauthorized to download commercial voucher.',
+      });
+    }
+
+    let beneficiary = null;
+    if (isMockMode || supabase.isMock) {
+      beneficiary = mockStore.findBeneficiaryById(transaction.beneficiary_id);
+    } else {
+      const { data } = await supabase.from('beneficiaries').select('*').eq('id', transaction.beneficiary_id).single();
+      beneficiary = data;
+    }
+
+    // Generate Commercial Payment Declaration & Settlement Voucher in memory
+    const pdfBuffer = await generateCommercialVoucherPdf(transaction, user, beneficiary || {});
+
+    // Set standard PDF download headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Voucher-${transaction.id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   initiateTransaction,
   handlePgWebhook,
@@ -999,5 +1122,7 @@ module.exports = {
   getTransactionById,
   getTransactionAnalytics,
   downloadInvoicePdf,
+  downloadCommercialVoucherPdf,
   sendEmailInvoice,
 };
+

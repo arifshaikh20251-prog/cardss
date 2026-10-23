@@ -2,10 +2,12 @@
  * Promotional Coupon & Discount Engine
  * B2B Vendor Invoicing & Rental Management Platform
  *
- * Implements promotional coupon validation and fee discounts:
- * - WELCOME50: Flat ₹50 off convenience fee on transfers > ₹5,000
- * - FEE10: 10% discount on convenience fee
- * - RENTMAX: Flat ₹100 off convenience fee on rental payments > ₹15,000
+ * Implements unit-economic profit-safe tiered promotional coupons:
+ * - SAVE10: ₹10 OFF on transactions >= ₹10,000 (Min fee: ₹200)
+ * - SAVE25: ₹25 OFF on transactions >= ₹25,000 (Min fee: ₹500)
+ * - SAVE50: ₹50 OFF on transactions >= ₹50,000 (Min fee: ₹1,000)
+ * - REF15:  ₹15 instant fee discount on referee's first transaction
+ * - REF25:  ₹25 discount coupon on referrer's account
  *
  * Statutory SAC 9971 Compliance Rule:
  * In fintech rental and B2B payouts, 18% GST is charged strictly on the
@@ -16,32 +18,55 @@
 const { getFeeBreakdown, roundMoney, formatCurrencyINR, DEFAULT_GST_RATE_PERCENT } = require('../utils/feeCalculator');
 
 const ACTIVE_COUPONS = {
-  WELCOME50: {
-    code: 'WELCOME50',
+  SAVE10: {
+    code: 'SAVE10',
+    type: 'FLAT',
+    value: 10,
+    minAmount: 10000,
+    minFee: 200,
+    description: '₹10 OFF on transactions of ₹10,000 or more (Min fee: ₹200)',
+    badge: '₹10 OFF',
+    eligiblePurposes: null,
+  },
+  SAVE25: {
+    code: 'SAVE25',
+    type: 'FLAT',
+    value: 25,
+    minAmount: 25000,
+    minFee: 500,
+    description: '₹25 OFF on transactions of ₹25,000 or more (Min fee: ₹500)',
+    badge: '₹25 OFF',
+    eligiblePurposes: null,
+  },
+  SAVE50: {
+    code: 'SAVE50',
     type: 'FLAT',
     value: 50,
-    minAmount: 5000,
-    description: 'Flat ₹50 off platform fee for payments above ₹5,000',
-    badge: 'Flat ₹50 OFF',
-    eligiblePurposes: null, // all purposes
+    minAmount: 50000,
+    minFee: 1000,
+    description: '₹50 OFF on transactions of ₹50,000 or more (Min fee: ₹1,000)',
+    badge: '₹50 OFF',
+    eligiblePurposes: null,
   },
-  FEE10: {
-    code: 'FEE10',
-    type: 'PERCENTAGE',
-    value: 10,
-    minAmount: 0,
-    description: '10% discount on platform convenience fee',
-    badge: '10% OFF',
-    eligiblePurposes: null, // all purposes
-  },
-  RENTMAX: {
-    code: 'RENTMAX',
+  REF15: {
+    code: 'REF15',
     type: 'FLAT',
-    value: 100,
-    minAmount: 15000,
-    description: 'Flat ₹100 off platform fee on rental payments above ₹15,000',
-    badge: 'Flat ₹100 OFF Rent',
-    eligiblePurposes: ['OFFICE_RENT', 'WAREHOUSE_RENT', 'COMMERCIAL_OFFICE_LEASE', 'COMMERCIAL_LEASE', 'RENT', 'RENTAL'],
+    value: 15,
+    minAmount: 1000,
+    minFee: 25,
+    description: 'Referral Welcome: ₹15 instant fee discount on your first transfer',
+    badge: 'Referral ₹15 OFF',
+    eligiblePurposes: null,
+  },
+  REF25: {
+    code: 'REF25',
+    type: 'FLAT',
+    value: 25,
+    minAmount: 5000,
+    minFee: 100,
+    description: 'Referral Reward: ₹25 discount coupon earned from friend referral',
+    badge: 'Referral ₹25 OFF',
+    eligiblePurposes: null,
   },
 };
 
@@ -54,6 +79,7 @@ function getActiveCoupons() {
     type: c.type,
     value: c.value,
     minAmount: c.minAmount,
+    minFee: c.minFee,
     description: c.description,
     badge: c.badge,
     eligiblePurposes: c.eligiblePurposes,
@@ -61,10 +87,41 @@ function getActiveCoupons() {
 }
 
 /**
+ * Finds and returns the highest eligible coupon for a given transaction amount
+ *
+ * @param {Object} params
+ * @param {number|string} params.amount - Transaction amount
+ * @param {'INSTANT'|'STANDARD'} [params.transferType='STANDARD']
+ * @param {string} [params.purpose='']
+ * @returns {Object|null} Best coupon with calculated savings, or null if none eligible
+ */
+function getHighestEligibleCoupon({ amount, transferType = 'STANDARD', purpose = '' }) {
+  const numericAmount = parseFloat(amount || 0);
+  if (isNaN(numericAmount) || numericAmount <= 0) return null;
+
+  // Rank coupons by discount value descending (SAVE50, SAVE25, SAVE10)
+  const candidateCodes = ['SAVE50', 'SAVE25', 'SAVE10'];
+
+  for (const code of candidateCodes) {
+    const res = validateAndApplyCoupon({
+      code,
+      amount: numericAmount,
+      transferType,
+      purpose,
+    });
+    if (res.valid) {
+      return res.coupon;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Validates a coupon code against transaction parameters and computes the net discounted fee
  *
  * @param {Object} params
- * @param {string} params.code - Coupon code (e.g. 'WELCOME50')
+ * @param {string} params.code - Coupon code (e.g. 'SAVE10')
  * @param {number|string} params.amount - Principal transaction amount
  * @param {'INSTANT'|'STANDARD'} [params.transferType='STANDARD'] - Transfer speed
  * @param {string} [params.purpose=''] - Transaction purpose (e.g. 'OFFICE_RENT')
@@ -99,12 +156,12 @@ function validateAndApplyCoupon({ code, amount, transferType = 'STANDARD', purpo
     };
   }
 
-  // 1. Minimum amount requirement check
-  if (coupon.minAmount > 0 && numericAmount <= coupon.minAmount) {
+  // 1. Minimum transaction amount requirement check (must be >= coupon.minAmount)
+  if (coupon.minAmount > 0 && numericAmount < coupon.minAmount) {
     return {
       valid: false,
       error: 'MinAmountNotMet',
-      message: `Coupon '${coupon.code}' requires a transaction amount greater than ${formatCurrencyINR(coupon.minAmount)}.`,
+      message: `Coupon '${coupon.code}' requires a minimum transaction amount of ${formatCurrencyINR(coupon.minAmount)}.`,
       minAmount: coupon.minAmount,
     };
   }
@@ -126,7 +183,17 @@ function validateAndApplyCoupon({ code, amount, transferType = 'STANDARD', purpo
   const baseBreakdown = getFeeBreakdown(numericAmount, transferType);
   const originalFee = baseBreakdown.platformFee;
 
-  // 4. Calculate raw discount amount
+  // 4. Unit-Economic Minimum Platform Fee check
+  if (coupon.minFee > 0 && originalFee < coupon.minFee) {
+    return {
+      valid: false,
+      error: 'MinFeeNotMet',
+      message: `Coupon '${coupon.code}' requires a minimum platform fee of ${formatCurrencyINR(coupon.minFee)}.`,
+      minFee: coupon.minFee,
+    };
+  }
+
+  // 5. Calculate raw discount amount
   let rawDiscount = 0;
   if (coupon.type === 'FLAT') {
     rawDiscount = coupon.value;
@@ -134,16 +201,16 @@ function validateAndApplyCoupon({ code, amount, transferType = 'STANDARD', purpo
     rawDiscount = roundMoney(originalFee * (coupon.value / 100));
   }
 
-  // 5. Cap discount so platform fee does not become negative
+  // 6. Cap discount so platform fee does not become negative
   const discountAmount = roundMoney(Math.min(rawDiscount, originalFee));
   const netFee = roundMoney(Math.max(0, originalFee - discountAmount));
 
-  // 6. Statutory SAC 9971 GST (18%) on net fee
+  // 7. Statutory SAC 9971 GST (18%) on net fee
   const gstAmount = roundMoney(netFee * (DEFAULT_GST_RATE_PERCENT / 100));
   const totalFee = roundMoney(netFee + gstAmount);
   const totalPayable = roundMoney(numericAmount + totalFee);
 
-  // 7. Total savings = discount on fee + GST saved
+  // 8. Total savings = discount on fee + GST saved
   const originalTotalFee = baseBreakdown.totalFee;
   const totalSavings = roundMoney(originalTotalFee - totalFee);
 
@@ -152,6 +219,7 @@ function validateAndApplyCoupon({ code, amount, transferType = 'STANDARD', purpo
     coupon: {
       code: coupon.code,
       type: coupon.type,
+      value: coupon.value,
       description: coupon.description,
       badge: coupon.badge,
       principalAmount: numericAmount,
@@ -180,5 +248,7 @@ function validateAndApplyCoupon({ code, amount, transferType = 'STANDARD', purpo
 module.exports = {
   ACTIVE_COUPONS,
   getActiveCoupons,
+  getHighestEligibleCoupon,
   validateAndApplyCoupon,
 };
+

@@ -127,6 +127,7 @@ async function verifyOtp(req, res, next) {
         pan_number: user.pan_number,
         kyc_status: user.kyc_status,
         is_cooling_cleared: user.is_cooling_cleared,
+        referral_code: user.referral_code || 'PAY987',
       },
     });
   } catch (err) {

@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 
 export default function TransactionCard({ transaction }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadingVoucher, setDownloadingVoucher] = useState(false);
   const [emailing, setEmailing] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [countdown, setCountdown] = useState(() => {
@@ -34,6 +35,17 @@ export default function TransactionCard({ transaction }) {
       alert(err.message || 'Failed to download invoice.');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadVoucher = async () => {
+    setDownloadingVoucher(true);
+    try {
+      await api.downloadVoucher(transaction.id);
+    } catch (err) {
+      alert(err.message || 'Failed to download commercial voucher.');
+    } finally {
+      setDownloadingVoucher(false);
     }
   };
 
@@ -127,7 +139,29 @@ export default function TransactionCard({ transaction }) {
           {transaction.transfer_type || 'STANDARD'} • {transaction.purpose || 'VENDOR_PAYMENT'}
         </span>
 
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+          {/* Auto-Generated B2B Commercial Voucher Download */}
+          {(transaction.voucher_status === 'AUTO_GENERATED' || !transaction.has_external_invoice) && (
+            <button
+              onClick={handleDownloadVoucher}
+              disabled={downloadingVoucher}
+              title="Download RBI Commercial Payment Declaration & Settlement Voucher"
+              className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-200 transition flex items-center space-x-1 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-500/30 active:scale-95 disabled:opacity-50"
+            >
+              {downloadingVoucher ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Voucher...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  <span>B2B Voucher</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={handleEmailInvoice}
             disabled={emailing}
@@ -155,6 +189,7 @@ export default function TransactionCard({ transaction }) {
           <button
             onClick={handleDownloadInvoice}
             disabled={downloading}
+            title="Download SAC 9971 GST Tax Invoice PDF"
             className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition flex items-center space-x-1 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-300 dark:border-indigo-500/30 active:scale-95 disabled:opacity-50"
           >
             {downloading ? (
@@ -165,7 +200,7 @@ export default function TransactionCard({ transaction }) {
             ) : (
               <>
                 <Download className="w-3 h-3" />
-                <span>PDF</span>
+                <span>PDF Invoice</span>
               </>
             )}
           </button>

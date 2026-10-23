@@ -18,6 +18,7 @@ router.get('/analytics', authMiddleware, transactionController.getTransactionAna
 router.post('/initiate', authMiddleware, transactionController.initiateTransaction);
 router.get('/:id', authMiddleware, transactionController.getTransactionById);
 router.get('/:id/invoice', authMiddleware, transactionController.downloadInvoicePdf);
+router.get('/:id/voucher', authMiddleware, transactionController.downloadCommercialVoucherPdf);
 router.post('/:id/send-email-invoice', authMiddleware, transactionController.sendEmailInvoice);
 
 module.exports = router;

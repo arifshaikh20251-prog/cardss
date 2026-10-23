@@ -98,7 +98,7 @@ export const api = {
     body: JSON.stringify(payload),
   }),
 
-  // Download PDF
+  // Download PDF Tax Invoice
   downloadInvoice: async (transactionId) => {
     const blob = await request(`/transactions/${transactionId}/invoice`, {
       method: 'GET',
@@ -115,11 +115,36 @@ export const api = {
     window.URL.revokeObjectURL(url);
   },
 
+  // Download Digital Commercial Payment Declaration & Settlement Voucher PDF
+  downloadVoucher: async (transactionId) => {
+    const blob = await request(`/transactions/${transactionId}/voucher`, {
+      method: 'GET',
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Voucher-${transactionId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
   // Send / Resend Invoice via Email
   sendEmailInvoice: (transactionId, email) => request(`/transactions/${transactionId}/send-email-invoice`, {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
+
+  // Zero-Loss Referral System Endpoints
+  applyReferralCode: (referral_code) => request('/referrals/apply', {
+    method: 'POST',
+    body: JSON.stringify({ referral_code }),
+  }),
+
+  getReferralStats: () => request('/referrals/my-stats'),
 
   // KYC Verification Endpoints
   getKycStatus: () => request('/kyc/status'),

@@ -20,9 +20,15 @@ const FILES_TO_SYNC = [
   'src/services/couponService.js',
   'src/routes/coupons.js',
   'src/app.js',
+  'src/controllers/authController.js',
+  'src/controllers/referralController.js',
   'src/controllers/transactionController.js',
+  'src/routes/referrals.js',
   'src/routes/transactions.js',
   'src/config/mockStore.js',
+  'src/config/supabase.js',
+  'src/services/invoiceService.js',
+  'src/services/coolingWorker.js',
 ];
 
 async function deploy() {

@@ -65,9 +65,10 @@ function PayContent() {
   const [couponSuccess, setCouponSuccess] = useState('');
 
   const PRESET_COUPONS = [
-    { code: 'WELCOME50', label: 'Flat ₹50 OFF', desc: '> ₹5,000' },
-    { code: 'FEE10', label: '10% OFF Fee', desc: 'All orders' },
-    { code: 'RENTMAX', label: 'Flat ₹100 OFF', desc: 'Rent > ₹15,000' },
+    { code: 'SAVE10', label: '₹10 OFF', desc: '>= ₹10,000' },
+    { code: 'SAVE25', label: '₹25 OFF', desc: '>= ₹25,000' },
+    { code: 'SAVE50', label: '₹50 OFF', desc: '>= ₹50,000' },
+    { code: 'REF15', label: '₹15 Referral', desc: 'First payout' },
   ];
 
   // Fee Breakdown Accordion
@@ -109,6 +110,15 @@ function PayContent() {
   const isOverCap = numericAmount > 25000;
   const breakdown = calculateTotalFromBase(numericAmount, transferType);
   const effectiveTotal = appliedCoupon ? appliedCoupon.totalPayable : breakdown.totalPayable;
+
+  // Auto-suggest highest eligible coupon based on transaction amount
+  const getAutoSuggestedCoupon = () => {
+    if (numericAmount >= 50000) return { code: 'SAVE50', discount: 50, label: 'SAVE50' };
+    if (numericAmount >= 25000) return { code: 'SAVE25', discount: 25, label: 'SAVE25' };
+    if (numericAmount >= 10000) return { code: 'SAVE10', discount: 10, label: 'SAVE10' };
+    return null;
+  };
+  const autoSuggestedCoupon = getAutoSuggestedCoupon();
 
   const handleApplyCoupon = async (codeToUse) => {
     const code = (codeToUse || couponCode).trim().toUpperCase();
@@ -401,6 +411,34 @@ function PayContent() {
           ))}
         </div>
 
+        {/* Auto-suggest highest eligible coupon pill directly under amount */}
+        {autoSuggestedCoupon && !appliedCoupon && (
+          <div className="pt-2 animate-in fade-in-50">
+            <button
+              type="button"
+              onClick={() => handleApplyCoupon(autoSuggestedCoupon.code)}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-600/40 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold shadow-sm transition transform active:scale-95 group"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:rotate-12 transition-transform" />
+              <span>
+                Apply <strong className="font-mono text-emerald-900 dark:text-emerald-100">{autoSuggestedCoupon.code}</strong> to save {formatINR(autoSuggestedCoupon.discount)} on fee!
+              </span>
+              <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-1.5 py-0.5 rounded-md ml-1 shadow-sm">
+                Apply Code
+              </span>
+            </button>
+          </div>
+        )}
+
+        {appliedCoupon && (
+          <div className="pt-2">
+            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>{appliedCoupon.code} applied • Saved {formatINR(appliedCoupon.totalSavings)} on fee</span>
+            </span>
+          </div>
+        )}
+
         {/* Purpose / Add Note Selector */}
         <div className="pt-2">
           {!isPurposeOpen ? (
@@ -481,11 +519,16 @@ function PayContent() {
                 <UploadCloud className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-slate-900 dark:text-white">
-                  Upload Invoice (Optional)
-                </h4>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  Attach PDF, JPG, PNG up to 5 MB for GST audit
+                <div className="flex items-center space-x-1.5">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">
+                    Upload Invoice (Optional)
+                  </h4>
+                  <span className="text-[9.5px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold px-1.5 py-0.2 rounded">
+                    Auto-Voucher Enabled
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  No invoice? A legally binding Commercial Settlement Voucher will be auto-generated.
                 </p>
               </div>
             </div>
@@ -774,8 +817,8 @@ function PayContent() {
             </span>
             <span className="text-[10px] text-slate-400 font-normal">
               {appliedCoupon
-                ? `(saved ${formatINR(appliedCoupon.totalSavings)})`
-                : `(incl. ₹${breakdown.totalFee} fee & 18% GST)`}
+                ? `(Processing Fee: ${formatINR(appliedCoupon.totalFee)} incl. taxes • saved ${formatINR(appliedCoupon.totalSavings)})`
+                : `(Processing Fee: ${formatINR(breakdown.totalFee)} incl. all taxes & 18% GST)`}
             </span>
           </div>
           <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold flex items-center space-x-0.5">

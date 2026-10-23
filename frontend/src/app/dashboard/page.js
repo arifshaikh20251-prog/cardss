@@ -23,6 +23,10 @@ import {
   Sparkles,
   Clock,
   CheckCircle2,
+  Gift,
+  Copy,
+  Check,
+  MessageSquare,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -31,6 +35,8 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [referralStats, setReferralStats] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -48,16 +54,20 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setRefreshing(true);
-      const [txRes, benRes, analyticsRes] = await Promise.all([
+      const [txRes, benRes, analyticsRes, refRes] = await Promise.all([
         api.getTransactions().catch(() => ({ transactions: [] })),
         api.getBeneficiaries().catch(() => ({ beneficiaries: [] })),
         api.getTransactionAnalytics().catch(() => null),
+        api.getReferralStats().catch(() => null),
       ]);
 
       setTransactions(txRes.transactions || []);
       setBeneficiaries(benRes.beneficiaries || []);
       if (analyticsRes && analyticsRes.analytics) {
         setAnalytics(analyticsRes.analytics);
+      }
+      if (refRes && refRes.success) {
+        setReferralStats(refRes);
       }
     } catch (e) {
       console.error('Failed to load dashboard', e);
@@ -243,6 +253,95 @@ export default function DashboardPage() {
                   title={`In Cooling ${100 - settledPct}%`}
                 />
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Sleek Refer & Earn ₹25 Card with 1-Click WhatsApp Share */}
+      {(() => {
+        const userReferralCode = user?.referral_code || referralStats?.referral_code || 'PAY987';
+        const shareMessage = `Pay vendor bills & commercial rent with credit card and get ₹15 off! Use my referral code: ${userReferralCode} at https://eshopcity.in`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+
+        const handleCopy = () => {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(userReferralCode);
+            setCopiedCode(true);
+            setTimeout(() => setCopiedCode(false), 2500);
+          }
+        };
+
+        return (
+          <div className="rounded-3xl bg-gradient-to-br from-emerald-500/10 via-indigo-600/10 to-emerald-500/15 border border-emerald-500/30 p-4 sm:p-5 shadow-sm dark:shadow-glow relative overflow-hidden space-y-3.5">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-1.5">
+                    <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                      Refer & Earn ₹25
+                    </h3>
+                    <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-1.5 py-0.2 rounded-full">
+                      Zero-Loss
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                    Friends get <strong>₹15 OFF</strong> on their first transfer. You earn a <strong>₹25 discount coupon</strong> on their payout.
+                  </p>
+                </div>
+              </div>
+
+              {referralStats && referralStats.total_rewards_earned > 0 && (
+                <div className="text-[10px] bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold px-2 py-1 rounded-full border border-emerald-500/30">
+                  Earned: {formatINR(referralStats.total_rewards_earned)} ({referralStats.successful_payouts} friends)
+                </div>
+              )}
+            </div>
+
+            {/* Action Row: Code Box + Copy + WhatsApp Share Button */}
+            <div className="flex items-center gap-2 pt-1 flex-wrap sm:flex-nowrap">
+              {/* Code Box with Copy */}
+              <div className="flex-1 flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-3.5 py-2 min-w-[160px] shadow-sm">
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">
+                    Your Referral Code
+                  </span>
+                  <span className="text-sm font-black font-mono text-indigo-600 dark:text-indigo-400 tracking-wider">
+                    {userReferralCode}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition flex items-center space-x-1"
+                  title="Copy Referral Code"
+                >
+                  {copiedCode ? (
+                    <span className="text-[10px] font-bold text-emerald-600 flex items-center space-x-0.5">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied!</span>
+                    </span>
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+
+              {/* 1-Click WhatsApp Share Button */}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-md transition transform active:scale-95 shrink-0"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Share via WhatsApp</span>
+              </a>
             </div>
           </div>
         );
